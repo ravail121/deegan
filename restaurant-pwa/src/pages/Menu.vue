@@ -22,11 +22,13 @@
       <!-- Categories -->
       <nav class="cats" role="tablist" aria-label="Categories">
         <button
-          v-for="c in categories" :key="c.id"
-          class="pill" :class="{ active: c.id === activeCat }"
-          role="tab" :aria-selected="c.id === activeCat"
+          v-for="c in categories"
+          :key="c.id"
+          class="pill"
+          :class="{ active: c.id === activeCat }"
+          role="tab"
+          :aria-selected="c.id === activeCat"
           @click="activeCat = c.id">
-          <span class="pill-emoji">{{ c.emoji }}</span>
           <span class="pill-label">{{ c.name }}</span>
         </button>
       </nav>
@@ -50,13 +52,7 @@
     </div>
     <FilterSheet
   :open="showFilters"
-  :categories="[
-    { id:'starters', label:'Starters' },
-    { id:'mains',    label:'Mains' },
-    { id:'desserts', label:'Desserts' },
-    { id:'drinks',   label:'Drinks' },
-    { id:'veg',      label:'Vegetarian' }
-  ]"
+  :categories="filterCategories"
   :prices="priceOptions"
   @close="showFilters=false"
 />
@@ -64,7 +60,7 @@
   </template>
   
   <script setup>
-  import { ref, computed } from 'vue'
+  import { ref, computed, onMounted } from 'vue'
   import MenuItemCard from '../components/MenuItemCard.vue'
   import FilterSheet from '../components/FilterSheet.vue'
   import { useCart } from '../stores/cart'
@@ -79,18 +75,37 @@
     { id:'p5', label:'$40 – $60' },
     { id:'p6', label:'$60+' }
     ]
-  
-  const categories = [
-    { id: 'all',      name: 'All',       emoji: '🍲' },
-    { id: 'starters', name: 'Starters',  emoji: '🥗' },
-    { id: 'mains',    name: 'Mains',     emoji: '🍛' },
-    { id: 'biryani',  name: 'Biryani',   emoji: '🍚' },
-    { id: 'grill',    name: 'Grill',     emoji: '🍖' },
-    { id: 'veg',      name: 'Veg',       emoji: '🥦' },
-    { id: 'drinks',   name: 'Drinks',    emoji: '🥤' },
-    { id: 'dessert',  name: 'Desserts',  emoji: '🍮' }
-  ]
-  const activeCat = ref('all')
+  const API_BASE_URL = (import.meta.env?.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '')
+  const PACKAGES_ENDPOINT = `${API_BASE_URL}/api/packages`
+
+  const defaultCategory = { id: 'all', name: 'All' }
+  const categories = ref([defaultCategory])
+  const activeCat = ref(defaultCategory.id)
+
+  const filterCategories = computed(() =>
+    categories.value
+      .filter(c => c.id !== defaultCategory.id)
+      .map(c => ({ id: c.id, label: c.name }))
+  )
+
+  async function loadCategories() {
+    try {
+      const response = await fetch(PACKAGES_ENDPOINT)
+      if (!response.ok) throw new Error(`Request failed: ${response.status}`)
+      const result = await response.json()
+      const apiCategories = Array.isArray(result?.data)
+        ? result.data.map(pkg => ({
+            id: String(pkg.packageID ?? pkg.id ?? ''),
+            name: pkg.packageName ?? pkg.name ?? 'Unnamed'
+          })).filter(cat => cat.id)
+        : []
+      categories.value = [defaultCategory, ...apiCategories]
+    } catch (error) {
+      console.error('Failed to load categories', error)
+    }
+  }
+
+  onMounted(loadCategories)
   
   // Hardcoded sample data (images: put files in /public/images/dishes/)
   const items = ref([
@@ -153,13 +168,12 @@
   box-shadow:0 2px 6px rgba(0,0,0,.12);
 }
   .pill{
-    flex:0 0 auto; display:inline-flex; align-items:center; gap:8px;
-    padding:10px 14px; border-radius:999px; border:1px solid rgba(0,0,0,.08);
+    flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+    padding:10px 18px; border-radius:999px; border:1px solid rgba(0,0,0,.08);
     background:#ffffff; color:#0e3a3a; font-weight:700; font-size:14px;
     box-shadow:0 2px 6px rgba(0,0,0,.04); transition:background .2s ease, color .2s ease, transform .06s ease;
   }
   .pill:active{transform:scale(.98)}
-  .pill-emoji{font-size:16px}
   .pill.active{ background:#0e3a3a; color:#fff; border-color:#0e3a3a; }
   
   /* List area */

@@ -1,0 +1,67 @@
+version: '3.9'
+
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: restaurant_db
+    command: ["--default-authentication-plugin=mysql_native_password"]
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: deegan
+      MYSQL_DATABASE: deegan
+      MYSQL_USER: restaurant_user
+      MYSQL_PASSWORD: restaurant_pass
+      MYSQL_ROOT_HOST: "%"     # allow root from outside if needed
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - restaurant_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Laravel API Backend
+  api:
+    build:
+      context: ./restaurant-api
+      dockerfile: Dockerfile
+    container_name: restaurant_api
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - api_storage:/var/www/html/storage
+      - api_bootstrap_cache:/var/www/html/bootstrap/cache
+      - ./restaurant-api/.env:/var/www/html/.env   # <-- Laravel reads its own .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - restaurant_network
+
+  # Vue PWA Frontend
+  pwa:
+    build:
+      context: ./restaurant-pwa
+      dockerfile: Dockerfile
+    container_name: restaurant_pwa
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    networks:
+      - restaurant_network
+    depends_on:
+      - api
+
+networks:
+  restaurant_network:
+    driver: bridge
+
+volumes:
+  db_data:
+  api_storage:
+  api_bootstrap_cache:

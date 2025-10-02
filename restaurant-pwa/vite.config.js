@@ -33,7 +33,7 @@ export default defineConfig({
   ],
   server: {
     host: true, // expose to network
-    port: 5173,
+    port: 3000, // Match your ngrok port
     allowedHosts: [
       'pangolin-flowing-fox.ngrok-free.app'
     ],
@@ -41,6 +41,14 @@ export default defineConfig({
       host: 'pangolin-flowing-fox.ngrok-free.app',
       protocol: 'wss',
       clientPort: 443
+    },
+    // Proxy API calls to your Laravel backend (Docker container)
+    proxy: {
+      '/api': {
+        target: 'http://restaurant_api:80', // Docker container name and port
+        changeOrigin: true,
+        secure: false
+      }
     }
   }
 })

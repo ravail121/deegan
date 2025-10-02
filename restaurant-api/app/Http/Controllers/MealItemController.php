@@ -16,7 +16,7 @@ class MealItemController extends Controller
     {
         $items = MealItem::active()
                         ->ordered()
-                        ->with('package')
+                        ->with(['package', 'activeSizes'])
                         ->get();
 
         return response()->json([
@@ -36,7 +36,7 @@ class MealItemController extends Controller
         $items = MealItem::active()
                         ->availableNow()
                         ->ordered()
-                        ->with('package')
+                        ->with(['package', 'activeSizes'])
                         ->get();
 
         return response()->json([
@@ -57,6 +57,7 @@ class MealItemController extends Controller
         $items = MealItem::where('packageID', $packageId)
                         ->active()
                         ->ordered()
+                        ->with(['package', 'activeSizes'])
                         ->get();
 
         return response()->json([
@@ -78,6 +79,7 @@ class MealItemController extends Controller
                         ->active()
                         ->availableNow()
                         ->ordered()
+                        ->with(['package', 'activeSizes'])
                         ->get();
 
         return response()->json([
@@ -97,7 +99,7 @@ class MealItemController extends Controller
     {
         $item = MealItem::where('itemID', $id)
                        ->active()
-                       ->with('package')
+                       ->with(['package', 'activeSizes'])
                        ->first();
 
         if (!$item) {
@@ -126,7 +128,7 @@ class MealItemController extends Controller
         $items = MealItem::active()
                         ->where('itemName', 'LIKE', "%{$query}%")
                         ->ordered()
-                        ->with('package')
+                        ->with(['package', 'activeSizes'])
                         ->get();
 
         return response()->json([

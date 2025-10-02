@@ -8,7 +8,11 @@
           <h3>Category</h3>
           <div class="grid2">
             <label v-for="c in categories" :key="c.id" class="opt">
-              <input type="checkbox" />
+              <input 
+                type="checkbox" 
+                :checked="selectedCategories.includes(c.id)"
+                @change="toggleCategory(c.id)"
+              />
               <span>{{ c.label }}</span>
             </label>
           </div>
@@ -32,20 +36,11 @@
         </section>
 
   
-        <!-- Special options (just UI placeholders) -->
-        <section class="section">
-          <h3>Special Options</h3>
-          <div class="grid2">
-            <label class="opt"><input type="checkbox" /><span>Vegetarian only</span></label>
-            <label class="opt"><input type="checkbox" /><span>Spicy dishes</span></label>
-            <label class="opt"><input type="checkbox" /><span>Chef’s special</span></label>
-          </div>
-        </section>
   
         <!-- Actions -->
         <div class="actions">
-          <button class="ghost" @click="$emit('close')">RESET</button>
-          <button class="primary" @click="$emit('close')">APPLY FILTERS</button>
+          <button class="ghost" @click="resetFilters">RESET</button>
+          <button class="primary" @click="applyFilters">APPLY FILTERS</button>
         </div>
       </div>
     </div>
@@ -55,13 +50,46 @@
   import { ref } from 'vue'
 
 const price = ref(20) // default slider value
+const selectedCategories = ref([])
 
-  defineProps({
+  const props = defineProps({
     open: Boolean,
     categories: { type: Array, default: () => [] },
     prices: { type: Array, default: () => [] }
   })
-  defineEmits(['close'])
+  
+  const emit = defineEmits(['close', 'apply-filters'])
+
+  // Handle category selection
+  const toggleCategory = (categoryId) => {
+    const index = selectedCategories.value.indexOf(categoryId)
+    if (index > -1) {
+      selectedCategories.value.splice(index, 1) // Allow deselecting categories
+    } else {
+      // Clear other selections and add new one (radio button behavior)
+      selectedCategories.value = [categoryId]
+    }
+  }
+
+  // Apply filters
+  const applyFilters = () => {
+    const filters = {
+      categories: selectedCategories.value.map(id => {
+        const category = props.categories.find(c => c.id === id)
+        return { id: category.id, label: category.label }
+      }),
+      price: price.value
+    }
+    emit('apply-filters', filters)
+  }
+
+  // Reset filters
+  const resetFilters = () => {
+    selectedCategories.value = []
+    price.value = 20
+    // Emit reset event to clear price filter in parent
+    emit('apply-filters', { categories: [], price: null })
+  }
   </script>
   
   <style scoped>

@@ -48,6 +48,24 @@ class MealItem extends Model
     }
 
     /**
+     * Get the sizes for this meal item.
+     */
+    public function sizes()
+    {
+        return $this->hasMany(MealItemSize::class, 'itemID', 'itemID');
+    }
+
+    /**
+     * Get only active sizes for this meal item.
+     */
+    public function activeSizes()
+    {
+        return $this->hasMany(MealItemSize::class, 'itemID', 'itemID')
+                    ->where('status', 'active')
+                    ->orderBy('displayOrder');
+    }
+
+    /**
      * Scope to get only active items.
      */
     public function scopeActive($query)

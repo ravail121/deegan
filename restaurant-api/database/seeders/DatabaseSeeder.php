@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             MealPackageSeeder::class,
             MealItemSeeder::class,
+            MealItemSizeSeeder::class,
         ]);
     }
 }

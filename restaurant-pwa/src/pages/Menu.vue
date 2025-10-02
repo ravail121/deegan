@@ -22,13 +22,11 @@
       <!-- Categories -->
       <nav class="cats" role="tablist" aria-label="Categories">
         <button
-          v-for="c in categories"
-          :key="c.id"
-          class="pill"
-          :class="{ active: c.id === activeCat }"
-          role="tab"
-          :aria-selected="c.id === activeCat"
-          @click="activeCat = c.id">
+          v-for="c in categories" :key="c.id"
+          class="pill" :class="{ active: c.id === activeCat }"
+          role="tab" :aria-selected="c.id === activeCat"
+          @click="handleCategoryClick(c.id)">
+          <span class="pill-emoji">{{ c.emoji }}</span>
           <span class="pill-label">{{ c.name }}</span>
         </button>
       </nav>
@@ -55,6 +53,7 @@
   :categories="filterCategories"
   :prices="priceOptions"
   @close="showFilters=false"
+  @apply-filters="applyFilters"
 />
 
   </template>
@@ -64,6 +63,7 @@
   import MenuItemCard from '../components/MenuItemCard.vue'
   import FilterSheet from '../components/FilterSheet.vue'
   import { useCart } from '../stores/cart'
+  import { getApiUrl, API_CONFIG } from '../config/api.js'
   const cart = useCart()
   const showFilters = ref(false)
 
@@ -75,51 +75,154 @@
     { id:'p5', label:'$40 – $60' },
     { id:'p6', label:'$60+' }
     ]
-  const API_BASE_URL = (import.meta.env?.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '')
-  const PACKAGES_ENDPOINT = `${API_BASE_URL}/api/packages`
+  
+  // Categories from API
+  const categories = ref([{ id: 'all', name: 'All', emoji: '🍲' }])
+  const activeCat = ref('all')
 
-  const defaultCategory = { id: 'all', name: 'All' }
-  const categories = ref([defaultCategory])
-  const activeCat = ref(defaultCategory.id)
-
-  const filterCategories = computed(() =>
-    categories.value
-      .filter(c => c.id !== defaultCategory.id)
-      .map(c => ({ id: c.id, label: c.name }))
-  )
-
-  async function loadCategories() {
+  // Fetch categories from API
+  const fetchCategories = async () => {
     try {
-      const response = await fetch(PACKAGES_ENDPOINT)
-      if (!response.ok) throw new Error(`Request failed: ${response.status}`)
-      const result = await response.json()
-      const apiCategories = Array.isArray(result?.data)
-        ? result.data.map(pkg => ({
-            id: String(pkg.packageID ?? pkg.id ?? ''),
-            name: pkg.packageName ?? pkg.name ?? 'Unnamed'
-          })).filter(cat => cat.id)
-        : []
-      categories.value = [defaultCategory, ...apiCategories]
+      const apiUrl = getApiUrl(API_CONFIG.ENDPOINTS.PACKAGES)
+      console.log('Fetching categories from:', apiUrl)
+      const response = await fetch(apiUrl)
+      const data = await response.json()
+      console.log('Categories response:', data)
+      
+      if (data.success && data.data && data.data.length > 0) {
+        // Add fetched categories after "ALL"
+        const fetchedCategories = data.data.map(pkg => ({
+          id: pkg.packageID.toString(),
+          name: pkg.packageName,
+          emoji: '🍽️'
+        }))
+        
+        categories.value = [
+          { id: 'all', name: 'All', emoji: '🍲' },
+          ...fetchedCategories
+        ]
+      }
     } catch (error) {
-      console.error('Failed to load categories', error)
+      console.error('Error fetching categories:', error)
     }
   }
 
-  onMounted(loadCategories)
+  onMounted(() => {
+    fetchCategories()
+    fetchAllMenuItems()
+  })
   
-  // Hardcoded sample data (images: put files in /public/images/dishes/)
-  const items = ref([
-    { id:'fish-pakora', name:'Fish Pakora', price:8.00,  desc:'Spicy fried fish with chutney', cat:'starters', image:'/images/dishes/fish.jpg', badge:'Halal' },
-    { id:'chicken-curry', name:'Chicken Curry', price:12.00, desc:'Rich tomato gravy, coriander', cat:'mains', image:'/images/dishes/curry.jpg', badge:'Popular' },
-    { id:'lamb-biryani', name:'Lamb Biryani', price:14.00, desc:'Aromatic rice, tender lamb', cat:'biryani', image:'/images/dishes/biryani.jpg' },
-    { id:'paneer-tikka', name:'Paneer Tikka', price:11.00, desc:'Char-grilled cottage cheese', cat:'veg', image:'/images/dishes/paneer.jpg' },
-    { id:'seekh-kebab', name:'Seekh Kebab', price:10.00, desc:'Minced meat skewers', cat:'grill', image:'/images/dishes/kebab.jpg' },
-    { id:'mango-lassi', name:'Mango Lassi', price:4.00,  desc:'Sweet mango yogurt drink', cat:'drinks', image:'/images/dishes/lassi.jpg' }
-  ])
+  // Menu items from API
+  const items = ref([])
+  const allItems = ref([]) // Store all fetched items
+  const priceFilter = ref(null) // Track current price filter
+
+  // Fetch all menu items
+  const fetchAllMenuItems = async () => {
+    try {
+      const apiUrl = getApiUrl(API_CONFIG.ENDPOINTS.ITEMS)
+      console.log('Fetching all items from:', apiUrl)
+      const response = await fetch(apiUrl)
+      const data = await response.json()
+      console.log('All items response:', data)
+      
+      if (data.success && data.data) {
+        allItems.value = data.data.map(item => ({
+          id: item.itemID.toString(),
+          name: item.itemName,
+          price: parseFloat(item.costPrice),
+          desc: item.description || '',
+          cat: item.packageID.toString(),
+          image: item.photo320 || '/images/dishes/default.jpg',
+          badge: item.isVegetarian ? 'Vegetarian' : (item.isSpicy ? 'Spicy' : '')
+        }))
+        applyCurrentFilters()
+      }
+    } catch (error) {
+      console.error('Error fetching menu items:', error)
+    }
+  }
+
+  // Fetch menu items for specific category
+  const fetchItemsByCategory = async (categoryId) => {
+    if (categoryId === 'all') {
+      await fetchAllMenuItems()
+      return
+    }
+    
+    try {
+      const apiUrl = getApiUrl(`${API_CONFIG.ENDPOINTS.ITEMS_BY_PACKAGE}/${categoryId}`)
+      console.log('Fetching category items from:', apiUrl)
+      const response = await fetch(apiUrl)
+      const data = await response.json()
+      console.log('Category items response:', data)
+      
+      if (data.success && data.data) {
+        allItems.value = data.data.map(item => ({
+          id: item.itemID.toString(),
+          name: item.itemName,
+          price: parseFloat(item.costPrice),
+          desc: item.description || '',
+          cat: item.packageID.toString(),
+          image: item.photo320 || '/images/dishes/default.jpg',
+          badge: item.isVegetarian ? 'Vegetarian' : (item.isSpicy ? 'Spicy' : '')
+        }))
+        applyCurrentFilters()
+      }
+    } catch (error) {
+      console.error('Error fetching items for category:', error)
+    }
+  }
   
-  const filteredItems = computed(() =>
-    activeCat.value === 'all' ? items.value : items.value.filter(i => i.cat === activeCat.value)
-  )
+  // Apply current filters to allItems and update items
+  const applyCurrentFilters = () => {
+    let filtered = [...allItems.value]
+    
+    // Apply price filter if set
+    if (priceFilter.value !== null) {
+      filtered = filtered.filter(item => item.price <= priceFilter.value)
+    }
+    
+    items.value = filtered
+  }
+
+  const filteredItems = computed(() => {
+    return items.value
+  })
+
+  // Handle category click
+  const handleCategoryClick = async (categoryId) => {
+    activeCat.value = categoryId
+    await fetchItemsByCategory(categoryId)
+  }
+
+  // Filter categories for FilterSheet (exclude 'all')
+  const filterCategories = computed(() => {
+    return categories.value.filter(cat => cat.id !== 'all').map(cat => ({
+      id: cat.id,
+      label: cat.name
+    }))
+  })
+
+  // Apply filters from FilterSheet
+  const applyFilters = (filters) => {
+    console.log('Applying filters:', filters)
+    
+    // Apply price filter first
+    priceFilter.value = filters.price || null
+    
+    // If category filter is applied, fetch items for that category
+    if (filters.categories && filters.categories.length > 0) {
+      const selectedCategory = filters.categories[0] // Take first selected category
+      handleCategoryClick(selectedCategory.id)
+    } else {
+      // If no category filter, show all items
+      handleCategoryClick('all')
+    }
+    
+    // Close the filter sheet
+    showFilters.value = false
+  }
   
   function onAdd(it){
     // For now just log; later connect to Pinia cart
@@ -168,12 +271,13 @@
   box-shadow:0 2px 6px rgba(0,0,0,.12);
 }
   .pill{
-    flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
-    padding:10px 18px; border-radius:999px; border:1px solid rgba(0,0,0,.08);
+    flex:0 0 auto; display:inline-flex; align-items:center; gap:8px;
+    padding:10px 14px; border-radius:999px; border:1px solid rgba(0,0,0,.08);
     background:#ffffff; color:#0e3a3a; font-weight:700; font-size:14px;
     box-shadow:0 2px 6px rgba(0,0,0,.04); transition:background .2s ease, color .2s ease, transform .06s ease;
   }
   .pill:active{transform:scale(.98)}
+  .pill-emoji{font-size:16px}
   .pill.active{ background:#0e3a3a; color:#fff; border-color:#0e3a3a; }
   
   /* List area */

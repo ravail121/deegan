@@ -24,11 +24,11 @@
           <h2 class="title">{{ item.name }}</h2>
   
           <!-- Variants -->
-          <section class="section">
+          <section class="section" v-if="item.sizes && item.sizes.length > 0">
             <h3>Choose Size</h3>
-            <label v-for="v in variants" :key="v.id" class="option">
-              <input type="radio" name="variant" :value="v" v-model="selectedVariant" />
-              {{ v.name }} (+${{ v.price }})
+            <label v-for="size in item.sizes" :key="size.sizeID" class="option">
+              <input type="radio" name="variant" :value="size" v-model="selectedVariant" />
+              {{ size.sizeName }} (${{ Number(size.price).toFixed(2) }})
             </label>
           </section>
   
@@ -62,7 +62,7 @@
   </template>
   
   <script setup>
-  import { ref } from 'vue'
+  import { ref, watch } from 'vue'
   import { useCart } from '../stores/cart'
   
   const props = defineProps({
@@ -74,23 +74,31 @@
   const selectedVariant = ref(null)
   const selectedAddOns = ref([])
   
-  // sample variants & add-ons
-  const variants = [
-    { id: 'small', name: 'Small', price: 0 },
-    { id: 'large', name: 'Large', price: 4 }
-  ]
+  // Reset modal state when opening
+  watch(showModal, (isOpen) => {
+    if (isOpen) {
+      qty.value = 1
+      selectedAddOns.value = []
+      // Auto-select first size if available
+      selectedVariant.value = props.item.sizes && props.item.sizes.length > 0 ? props.item.sizes[0] : null
+    }
+  })
+  
+  // sample add-ons
   const addOns = [
     { id: 'raita', name: 'Raita', price: 2 },
     { id: 'extra-chicken', name: 'Extra Chicken', price: 4 }
   ]
   function confirmAdd() {
   const addOnsTotal = selectedAddOns.value.reduce((t, a) => t + a.price, 0)
-  const variantUpcharge = selectedVariant.value?.price || 0
+  // Use size price if selected, otherwise use base item price
+  const basePrice = selectedVariant.value ? Number(selectedVariant.value.price) : props.item.price
+  
   cart.add({
     id: props.item.id,
     name: props.item.name,
     image: props.item.image,  
-    price: props.item.price + variantUpcharge + addOnsTotal,
+    price: basePrice + addOnsTotal,
     variant: selectedVariant.value,
     addOns: selectedAddOns.value,
     qty: qty.value

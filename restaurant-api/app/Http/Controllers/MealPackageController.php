@@ -35,7 +35,7 @@ class MealPackageController extends Controller
         $packages = MealPackage::active()
                                ->ordered()
                                ->with(['activeMealItems' => function ($query) {
-                                   $query->ordered();
+                                   $query->ordered()->with('activeSizes');
                                }])
                                ->get();
 
@@ -82,7 +82,7 @@ class MealPackageController extends Controller
         $package = MealPackage::where('packageID', $id)
                               ->active()
                               ->with(['activeMealItems' => function ($query) {
-                                  $query->ordered();
+                                  $query->ordered()->with('activeSizes');
                               }])
                               ->first();
 

@@ -33,7 +33,7 @@
     </div>
 
     <ul class="meta">
-      <li v-if="it.variant">Size: {{ it.variant.name }}</li>
+      <li v-if="it.variant">Size: {{ it.variant.sizeName }} (${{ Number(it.variant.price).toFixed(2) }})</li>
       <li v-for="a in it.addOns || []" :key="a.id">+ {{ a.name }}</li>
     </ul>
 

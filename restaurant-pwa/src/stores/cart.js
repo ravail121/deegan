@@ -12,7 +12,7 @@ export const useCart = defineStore('cart', {
     add(item) {
       const line = this.items.find(i =>
         i.id === item.id &&
-        item.variant?.id === i.variant?.id
+        item.variant?.sizeID === i.variant?.sizeID
       )
       if (line) {
         line.qty += item.qty

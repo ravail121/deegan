@@ -134,7 +134,8 @@
           desc: item.description || '',
           cat: item.packageID.toString(),
           image: item.photo320 || '/images/dishes/default.jpg',
-          badge: item.isVegetarian ? 'Vegetarian' : (item.isSpicy ? 'Spicy' : '')
+          badge: item.isVegetarian ? 'Vegetarian' : (item.isSpicy ? 'Spicy' : ''),
+          sizes: item.active_sizes || []
         }))
         applyCurrentFilters()
       }
@@ -165,7 +166,8 @@
           desc: item.description || '',
           cat: item.packageID.toString(),
           image: item.photo320 || '/images/dishes/default.jpg',
-          badge: item.isVegetarian ? 'Vegetarian' : (item.isSpicy ? 'Spicy' : '')
+          badge: item.isVegetarian ? 'Vegetarian' : (item.isSpicy ? 'Spicy' : ''),
+          sizes: item.active_sizes || []
         }))
         applyCurrentFilters()
       }

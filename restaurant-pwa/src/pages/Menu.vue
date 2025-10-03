@@ -26,7 +26,10 @@
           class="pill" :class="{ active: c.id === activeCat }"
           role="tab" :aria-selected="c.id === activeCat"
           @click="handleCategoryClick(c.id)">
-          <span class="pill-emoji">{{ c.emoji }}</span>
+          <span class="pill-emoji">
+            <img v-if="c.image" :src="c.image" :alt="c.name" class="pill-image" />
+            <span v-else>{{ c.emoji }}</span>
+          </span>
           <span class="pill-label">{{ c.name }}</span>
         </button>
       </nav>
@@ -94,11 +97,11 @@
         const fetchedCategories = data.data.map(pkg => ({
           id: pkg.packageID.toString(),
           name: pkg.packageName,
-          emoji: '🍽️'
+          image: pkg.photo80 ? `https://menu.deegaan.so/assets/images/meals/packages/small80/${pkg.photo80}` : '/images/dishes/default.jpg'
         }))
         
         categories.value = [
-          { id: 'all', name: 'All', emoji: '🍲' },
+          { id: 'all', name: 'All', emoji: '🍲', image: null },
           ...fetchedCategories
         ]
       }
@@ -133,9 +136,10 @@
           price: parseFloat(item.costPrice),
           desc: item.description || '',
           cat: item.packageID.toString(),
-          image: item.photo320 || '/images/dishes/default.jpg',
+          image: item.photo320 ? `https://menu.deegaan.so/assets/images/meals/items/middle320/${item.photo320}` : '/images/dishes/default.jpg',
           badge: item.isVegetarian ? 'Vegetarian' : (item.isSpicy ? 'Spicy' : ''),
-          sizes: item.active_sizes || []
+          sizes: item.active_sizes || [],
+          addons: item.active_addons || []
         }))
         applyCurrentFilters()
       }
@@ -165,9 +169,10 @@
           price: parseFloat(item.costPrice),
           desc: item.description || '',
           cat: item.packageID.toString(),
-          image: item.photo320 || '/images/dishes/default.jpg',
+          image: item.photo320 ? `https://menu.deegaan.so/assets/images/meals/items/middle320/${item.photo320}` : '/images/dishes/default.jpg',
           badge: item.isVegetarian ? 'Vegetarian' : (item.isSpicy ? 'Spicy' : ''),
-          sizes: item.active_sizes || []
+          sizes: item.active_sizes || [],
+          addons: item.active_addons || []
         }))
         applyCurrentFilters()
       }
@@ -280,6 +285,7 @@
   }
   .pill:active{transform:scale(.98)}
   .pill-emoji{font-size:16px}
+  .pill-image{width:16px;height:16px;object-fit:cover;border-radius:3px}
   .pill.active{ background:#0e3a3a; color:#fff; border-color:#0e3a3a; }
   
   /* List area */

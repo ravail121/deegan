@@ -33,11 +33,11 @@
           </section>
   
           <!-- Add-ons -->
-          <section class="section">
+          <section class="section" v-if="item.addons && item.addons.length > 0">
             <h3>Add-ons</h3>
-            <label v-for="a in addOns" :key="a.id" class="option">
-              <input type="checkbox" :value="a" v-model="selectedAddOns" />
-              {{ a.name }} (+${{ a.price }})
+            <label v-for="addon in item.addons" :key="addon.addonID" class="option">
+              <input type="checkbox" :value="addon" v-model="selectedAddOns" />
+              {{ addon.addonName }} (+${{ Number(addon.price).toFixed(2) }})
             </label>
           </section>
   
@@ -84,13 +84,8 @@
     }
   })
   
-  // sample add-ons
-  const addOns = [
-    { id: 'raita', name: 'Raita', price: 2 },
-    { id: 'extra-chicken', name: 'Extra Chicken', price: 4 }
-  ]
   function confirmAdd() {
-  const addOnsTotal = selectedAddOns.value.reduce((t, a) => t + a.price, 0)
+  const addOnsTotal = selectedAddOns.value.reduce((t, a) => t + Number(a.price), 0)
   // Use size price if selected, otherwise use base item price
   const basePrice = selectedVariant.value ? Number(selectedVariant.value.price) : props.item.price
   
@@ -110,7 +105,7 @@
   <style scoped>
   /* existing card styles */
   .card{background:#f9f7f2;border-radius:16px;padding:12px;box-shadow:0 4px 14px rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.05);margin-bottom:14px}
-  .photo{width:100%;height:170px;object-fit:cover;border-radius:12px}
+  .photo{width:100%;height:140px;object-fit:cover;border-radius:12px}
   .row{display:flex;align-items:center;justify-content:space-between}
   .head{margin-top:10px}
   .name{margin:0;font-weight:800;color:#153c3c;font-size:clamp(18px,4.5vw,22px)}

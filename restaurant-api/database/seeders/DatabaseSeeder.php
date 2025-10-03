@@ -15,10 +15,6 @@ class DatabaseSeeder extends Seeder
     {
         // \App\Models\User::factory(10)->create();
         
-        $this->call([
-            MealPackageSeeder::class,
-            MealItemSeeder::class,
-            MealItemSizeSeeder::class,
-        ]);
+        // No seeders - database will be populated manually or via API
     }
 }

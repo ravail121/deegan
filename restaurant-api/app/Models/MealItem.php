@@ -28,7 +28,6 @@ class MealItem extends Model
         'ingredients',
         'isVegetarian',
         'isSpicy',
-        'displayOrder',
     ];
 
     protected $casts = [
@@ -36,7 +35,6 @@ class MealItem extends Model
         'prepareTime' => 'integer',
         'isVegetarian' => 'boolean',
         'isSpicy' => 'boolean',
-        'displayOrder' => 'integer',
     ];
 
     /**
@@ -62,7 +60,24 @@ class MealItem extends Model
     {
         return $this->hasMany(MealItemSize::class, 'itemID', 'itemID')
                     ->where('status', 'active')
-                    ->orderBy('displayOrder');
+                    ->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get the addons for this meal item.
+     */
+    public function addons()
+    {
+        return $this->belongsToMany(Addon::class, 'rs_meal_item_addons', 'itemID', 'addonID');
+    }
+
+    /**
+     * Get only active addons for this meal item.
+     */
+    public function activeAddons()
+    {
+        return $this->belongsToMany(Addon::class, 'rs_meal_item_addons', 'itemID', 'addonID')
+                    ->where('rs_addons.status', 'active');
     }
 
     /**
@@ -95,7 +110,7 @@ class MealItem extends Model
      */
     public function scopeOrdered($query)
     {
-        return $query->orderBy('displayOrder');
+        return $query;
     }
 
     /**

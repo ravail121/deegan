@@ -8,6 +8,7 @@ echo "🚀 Starting Laravel Application Setup..."
 echo "🔑 Generating application key..."
 php artisan key:generate --force
 
+
 # Clear all caches
 echo "🧹 Clearing caches..."
 php artisan cache:clear
@@ -15,13 +16,10 @@ php artisan config:clear
 php artisan route:clear
 php artisan view:clear
 
-# Run migrations
+# Run migrations (only new ones)
 echo "💾 Running database migrations..."
-php artisan migrate --force
+php artisan migrate
 
-# Run seeders (if any)
-echo "🌱 Running database seeders..."
-php artisan db:seed --force || echo "No seeders to run or seeder failed (continuing...)"
 
 # Optimize for production
 echo "⚡ Optimizing application..."

@@ -20,8 +20,8 @@ return new class extends Migration
             $table->integer('displayOrder')->default(0);
             $table->timestamps();
 
-            // Foreign key constraint
-            $table->foreign('itemID')->references('itemID')->on('rs_meal_items')->onDelete('cascade');
+            // Note: Foreign key constraint removed since referenced table doesn't exist
+            // $table->foreign('itemID')->references('itemID')->on('rs_meal_items')->onDelete('cascade');
             
             // Indexes
             $table->index(['itemID', 'status']);

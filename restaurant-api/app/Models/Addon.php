@@ -5,16 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MealItemSize extends Model
+class Addon extends Model
 {
     use HasFactory;
 
-    protected $table = 'rs_meal_item_sizes';
-    protected $primaryKey = 'sizeID';
+    protected $table = 'rs_addons';
+    protected $primaryKey = 'addonID';
 
     protected $fillable = [
-        'itemID',
-        'sizeName',
+        'addonName',
+        'description',
         'price',
         'status',
     ];
@@ -24,15 +24,15 @@ class MealItemSize extends Model
     ];
 
     /**
-     * Get the meal item that owns this size.
+     * Get the meal items that have this addon.
      */
-    public function mealItem()
+    public function mealItems()
     {
-        return $this->belongsTo(MealItem::class, 'itemID', 'itemID');
+        return $this->belongsToMany(MealItem::class, 'rs_meal_item_addons', 'addonID', 'itemID');
     }
 
     /**
-     * Scope to get only active sizes.
+     * Scope to get only active addons.
      */
     public function scopeActive($query)
     {

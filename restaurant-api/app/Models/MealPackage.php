@@ -19,12 +19,10 @@ class MealPackage extends Model
         'status',
         'prepareTime',
         'description',
-        'displayOrder',
     ];
 
     protected $casts = [
         'prepareTime' => 'integer',
-        'displayOrder' => 'integer',
     ];
 
     /**
@@ -42,7 +40,7 @@ class MealPackage extends Model
     {
         return $this->hasMany(MealItem::class, 'packageID', 'packageID')
                     ->where('status', 'active')
-                    ->orderBy('displayOrder');
+                    ->orderBy('created_at', 'desc');
     }
 
     /**
@@ -58,6 +56,6 @@ class MealPackage extends Model
      */
     public function scopeOrdered($query)
     {
-        return $query->orderBy('displayOrder');
+        return $query;
     }
 }

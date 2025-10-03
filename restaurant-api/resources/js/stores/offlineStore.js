@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { API_CONFIG, getApiUrl } from '../config/api.js'
+import { indexedDBStorage } from './indexedDB.js'
 
 export const useOfflineStore = defineStore('offline', {
   state: () => ({
@@ -26,11 +27,23 @@ export const useOfflineStore = defineStore('offline', {
     },
 
     // Cache API data for offline use
-    cacheData(data, type) {
+    async cacheData(data, type) {
       if (type === 'packages') {
         this.offlineData.packages = data
+        // Store in IndexedDB for better persistence
+        try {
+          await indexedDBStorage.storePackages(data)
+        } catch (error) {
+          console.error('Failed to store packages in IndexedDB:', error)
+        }
       } else if (type === 'items') {
         this.offlineData.items = data
+        // Store in IndexedDB for better persistence
+        try {
+          await indexedDBStorage.storeItems(data)
+        } catch (error) {
+          console.error('Failed to store items in IndexedDB:', error)
+        }
       }
       this.lastUpdated = new Date().toISOString()
       
@@ -45,18 +58,44 @@ export const useOfflineStore = defineStore('offline', {
       this.preloadImages(data, type)
     },
 
-    // Load cached data from localStorage
-    loadCachedData() {
+    // Load cached data from IndexedDB and localStorage
+    async loadCachedData() {
       try {
-        const cached = localStorage.getItem('deegaan_offline_data')
-        if (cached) {
-          const data = JSON.parse(cached)
-          this.offlineData.packages = data.packages || []
-          this.offlineData.items = data.items || []
-          this.lastUpdated = data.lastUpdated
+        // Try IndexedDB first
+        const [packages, items] = await Promise.all([
+          indexedDBStorage.getPackages(),
+          indexedDBStorage.getItems()
+        ])
+        
+        if (packages.length > 0 || items.length > 0) {
+          this.offlineData.packages = packages
+          this.offlineData.items = items
+          console.log('Loaded data from IndexedDB:', { packages: packages.length, items: items.length })
+        } else {
+          // Fallback to localStorage
+          const cached = localStorage.getItem('deegaan_offline_data')
+          if (cached) {
+            const data = JSON.parse(cached)
+            this.offlineData.packages = data.packages || []
+            this.offlineData.items = data.items || []
+            this.lastUpdated = data.lastUpdated
+            console.log('Loaded data from localStorage')
+          }
         }
       } catch (error) {
         console.error('Failed to load cached data:', error)
+        // Fallback to localStorage
+        try {
+          const cached = localStorage.getItem('deegaan_offline_data')
+          if (cached) {
+            const data = JSON.parse(cached)
+            this.offlineData.packages = data.packages || []
+            this.offlineData.items = data.items || []
+            this.lastUpdated = data.lastUpdated
+          }
+        } catch (localError) {
+          console.error('Failed to load from localStorage:', localError)
+        }
       }
     },
 

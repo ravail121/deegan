@@ -1,24 +1,35 @@
 // Custom service worker for better offline handling
-const CACHE_NAME = 'deegaan-restaurant-v1';
+const CACHE_NAME = 'deegaan-restaurant-v2';
 const urlsToCache = [
   '/',
   '/dist/assets/',
   '/logo.png',
-  '/images/bg.jpg'
+  '/images/bg.jpg',
+  '/offline.html'
 ];
 
-// Install event - cache essential files
+// Install event - cache essential files including start URL
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        // Cache the start URL and essential files
+        return cache.addAll(urlsToCache.map(url => {
+          // Ensure we cache the exact start URL
+          if (url === '/') {
+            return new Request('/', { cache: 'reload' });
+          }
+          return url;
+        }));
       })
       .then(() => {
-        console.log('Service Worker installed');
+        console.log('Service Worker installed - start URL cached');
         return self.skipWaiting();
+      })
+      .catch((error) => {
+        console.error('Service Worker installation failed:', error);
       })
   );
 });
@@ -43,7 +54,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache when offline
+// Fetch event - CacheFirst strategy for offline cold launch
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') {
@@ -58,13 +69,13 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Return cached version or fetch from network
+        // CacheFirst strategy - return cached version if available
         if (response) {
           console.log('Serving from cache:', event.request.url);
           return response;
         }
 
-        // Clone the request because it's a stream
+        // If not in cache, try network
         const fetchRequest = event.request.clone();
 
         return fetch(fetchRequest).then((response) => {
@@ -83,10 +94,21 @@ self.addEventListener('fetch', (event) => {
 
           return response;
         }).catch(() => {
-          // If both cache and network fail, show offline page for navigation requests
+          // Network failed - handle different request types
           if (event.request.mode === 'navigate') {
-            return caches.match('/');
+            // For navigation requests, return cached start URL or offline page
+            return caches.match('/').then(cachedResponse => {
+              if (cachedResponse) {
+                return cachedResponse;
+              }
+              return caches.match('/offline.html');
+            });
+          } else if (event.request.destination === 'image') {
+            // For images, return a placeholder or nothing
+            return new Response('', { status: 404 });
           }
+          // For other requests, return empty response
+          return new Response('', { status: 404 });
         });
       })
   );

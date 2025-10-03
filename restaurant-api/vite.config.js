@@ -9,7 +9,12 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,gif,webp,woff,woff2,ttf,eot}'],
+        // Pre-cache the start URL and essential files
+        globDirectory: 'public',
+        globPatterns: [
+          '**/*.{js,css,html,ico,png,svg,jpg,jpeg,gif,webp,woff,woff2,ttf,eot}',
+          'offline.html'
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.(?:png|jpg|jpeg|svg|gif|webp)$/,
@@ -48,6 +53,9 @@ export default defineConfig({
         ],
         skipWaiting: true,
         clientsClaim: true,
+        // Ensure start URL is pre-cached
+        navigateFallback: '/',
+        navigateFallbackDenylist: [/^\/api\//],
       },
       manifest: {
         name: "Deegaan Restaurant",

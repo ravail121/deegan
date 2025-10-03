@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Worker Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0b0f12;
+            color: white;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: #333;
+        }
+        .success { background: #2d5a2d; }
+        .error { background: #5a2d2d; }
+        .info { background: #2d4a5a; }
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056CC; }
+    </style>
+</head>
+<body>
+    <h1>Service Worker Test</h1>
+    
+    <div id="status" class="status info">Checking service worker status...</div>
+    
+    <button onclick="testCache()">Test Cache</button>
+    <button onclick="testOffline()">Test Offline Mode</button>
+    <button onclick="clearCache()">Clear Cache</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const resultsDiv = document.getElementById('results');
+
+        function updateStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            resultsDiv.appendChild(div);
+        }
+
+        // Check service worker status
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(registration => {
+                updateStatus('Service Worker is ready!', 'success');
+                addResult(`SW Scope: ${registration.scope}`, 'info');
+                addResult(`SW State: ${registration.active ? registration.active.state : 'No active worker'}`, 'info');
+            }).catch(error => {
+                updateStatus('Service Worker failed to load', 'error');
+                addResult(`Error: ${error.message}`, 'error');
+            });
+        } else {
+            updateStatus('Service Worker not supported', 'error');
+        }
+
+        async function testCache() {
+            try {
+                const cache = await caches.open('deegaan-restaurant-v2');
+                const keys = await cache.keys();
+                addResult(`Cache contains ${keys.length} entries`, 'info');
+                
+                // Test if start URL is cached
+                const startUrlResponse = await cache.match('/');
+                if (startUrlResponse) {
+                    addResult('✅ Start URL (/) is cached', 'success');
+                } else {
+                    addResult('❌ Start URL (/) is NOT cached', 'error');
+                }
+            } catch (error) {
+                addResult(`Cache test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testOffline() {
+            try {
+                // Simulate offline by blocking network
+                const response = await fetch('/');
+                if (response.ok) {
+                    addResult('✅ App loads online', 'success');
+                } else {
+                    addResult(`❌ App failed to load: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Network error: ${error.message}`, 'error');
+            }
+        }
+
+        async function clearCache() {
+            try {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                addResult('✅ All caches cleared', 'success');
+            } catch (error) {
+                addResult(`❌ Failed to clear cache: ${error.message}`, 'error');
+            }
+        }
+
+        // Listen for service worker messages
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', event => {
+                addResult(`SW Message: ${JSON.stringify(event.data)}`, 'info');
+            });
+        }
+    </script>
+</body>
+</html>

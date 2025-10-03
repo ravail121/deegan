@@ -15,7 +15,7 @@ class MealPackageController extends Controller
     public function index()
     {
         $packages = MealPackage::active()
-                               ->ordered()
+                               ->orderBy('packageID', 'asc')
                                ->get();
 
         return response()->json([
@@ -33,9 +33,9 @@ class MealPackageController extends Controller
     public function indexWithItems()
     {
         $packages = MealPackage::active()
-                               ->ordered()
+                               ->orderBy('packageID', 'asc')
                                ->with(['activeMealItems' => function ($query) {
-                                   $query->ordered()->with('activeSizes');
+                                   $query->orderBy('itemID', 'asc')->with('activeSizes');
                                }])
                                ->get();
 
@@ -82,7 +82,7 @@ class MealPackageController extends Controller
         $package = MealPackage::where('packageID', $id)
                               ->active()
                               ->with(['activeMealItems' => function ($query) {
-                                  $query->ordered()->with('activeSizes');
+                                  $query->orderBy('itemID', 'asc')->with('activeSizes');
                               }])
                               ->first();
 

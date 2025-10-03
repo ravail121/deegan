@@ -110,7 +110,7 @@ class MealItem extends Model
      */
     public function scopeOrdered($query)
     {
-        return $query;
+        return $query->orderBy('itemID', 'asc');
     }
 
     /**

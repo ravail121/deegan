@@ -70,7 +70,6 @@ export const useOfflineStore = defineStore('offline', {
         if (packages.length > 0 || items.length > 0) {
           this.offlineData.packages = packages
           this.offlineData.items = items
-          console.log('Loaded data from IndexedDB:', { packages: packages.length, items: items.length })
         } else {
           // Fallback to localStorage
           const cached = localStorage.getItem('deegaan_offline_data')
@@ -79,7 +78,6 @@ export const useOfflineStore = defineStore('offline', {
             this.offlineData.packages = data.packages || []
             this.offlineData.items = data.items || []
             this.lastUpdated = data.lastUpdated
-            console.log('Loaded data from localStorage')
           }
         }
       } catch (error) {
@@ -111,7 +109,6 @@ export const useOfflineStore = defineStore('offline', {
           }
         }
       } catch (error) {
-        console.log('Network request failed, using cached data:', error)
       }
 
       // Return cached data if online request fails or offline
@@ -156,7 +153,6 @@ export const useOfflineStore = defineStore('offline', {
     preloadImages(data, type) {
       if (!data || !Array.isArray(data)) return
       
-      console.log(`Preloading images for ${type}...`)
       
       data.forEach(item => {
         let imageUrl = null
@@ -177,7 +173,6 @@ export const useOfflineStore = defineStore('offline', {
     preloadImage(url) {
       const img = new Image()
       img.onload = () => {
-        console.log(`Image preloaded: ${url}`)
       }
       img.onerror = () => {
         console.warn(`Failed to preload image: ${url}`)
@@ -187,7 +182,6 @@ export const useOfflineStore = defineStore('offline', {
 
     // Preload all images when app starts
     async preloadAllImages() {
-      console.log('Starting image preloading...')
       
       // Preload package images
       if (this.offlineData.packages.length > 0) {
@@ -199,12 +193,10 @@ export const useOfflineStore = defineStore('offline', {
         this.preloadImages(this.offlineData.items, 'items')
       }
       
-      console.log('Image preloading completed')
     },
 
     // Initialize app - fetch all data and preload images
     async initializeApp() {
-      console.log('Initializing app - fetching all data and preloading images...')
       
       try {
         // Fetch all data in parallel
@@ -213,15 +205,9 @@ export const useOfflineStore = defineStore('offline', {
           this.fetchItems()
         ])
         
-        console.log('Data fetching completed:', {
-          packages: packagesResult.success,
-          items: itemsResult.success
-        })
-        
         // Preload all images
         await this.preloadAllImages()
         
-        console.log('App initialization completed')
         return true
       } catch (error) {
         console.error('App initialization failed:', error)

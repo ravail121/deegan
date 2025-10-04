@@ -28,6 +28,9 @@ export const useCart = defineStore('cart', {
       },
   remove(idx){
     this.items.splice(idx, 1)
+  },
+  clearCart(){
+    this.items = []
   }
   }
 })

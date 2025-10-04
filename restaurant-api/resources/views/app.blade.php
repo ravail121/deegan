@@ -41,7 +41,6 @@
           // Try to register the custom service worker first
           navigator.serviceWorker.register('/sw-custom.js')
             .then((registration) => {
-              console.log('Custom SW registered: ', registration);
               
               // Check for updates
               registration.addEventListener('updatefound', () => {
@@ -55,15 +54,12 @@
               });
             })
             .catch((registrationError) => {
-              console.log('Custom SW registration failed, trying default: ', registrationError);
               
               // Fallback to default service worker
               navigator.serviceWorker.register('/dist/sw.js')
                 .then((registration) => {
-                  console.log('Default SW registered: ', registration);
                 })
                 .catch((fallbackError) => {
-                  console.log('Default SW registration also failed: ', fallbackError);
                 });
             });
         });
@@ -71,12 +67,10 @@
       
       // Handle offline/online events
       window.addEventListener('online', () => {
-        console.log('App is online');
         document.body.classList.remove('offline');
       });
       
       window.addEventListener('offline', () => {
-        console.log('App is offline');
         document.body.classList.add('offline');
       });
       

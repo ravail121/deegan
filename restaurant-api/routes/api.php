@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MealPackageController;
 use App\Http\Controllers\MealItemController;
 use App\Http\Controllers\AddonController;
+use App\Http\Controllers\SystemSettingsController;
+use App\Http\Controllers\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -61,3 +63,31 @@ Route::prefix('addons')->group(function () {
 
 // Quick Menu Route - Get everything in one call
 Route::get('/menu', [MealPackageController::class, 'indexWithItems']);
+
+/*
+|--------------------------------------------------------------------------
+| System Settings API Routes (Public - No Auth Required)
+|--------------------------------------------------------------------------
+*/
+
+// System Settings Routes
+Route::prefix('settings')->group(function () {
+    Route::get('/', [SystemSettingsController::class, 'index']);
+    Route::get('/app', [SystemSettingsController::class, 'getAppSettings']);
+    Route::get('/vat', [SystemSettingsController::class, 'getVATPercentage']);
+    Route::get('/financial-year', [SystemSettingsController::class, 'getCurrentFinancialYear']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Order API Routes (Public - No Auth Required)
+|--------------------------------------------------------------------------
+*/
+
+// Order Routes
+Route::prefix('orders')->group(function () {
+    Route::post('/', [OrderController::class, 'placeOrder']);
+    Route::get('/{orderID}', [OrderController::class, 'getOrder']);
+    Route::get('/table/{tableID}', [OrderController::class, 'getOrdersByTable']);
+    Route::put('/{orderID}/status', [OrderController::class, 'updateOrderStatus']);
+});

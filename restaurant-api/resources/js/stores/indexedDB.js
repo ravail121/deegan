@@ -23,7 +23,6 @@ class IndexedDBStorage {
 
       request.onsuccess = () => {
         this.db = request.result
-        console.log('IndexedDB opened successfully')
         resolve(this.db)
       }
 
@@ -48,7 +47,6 @@ class IndexedDBStorage {
           db.createObjectStore(STORE_NAMES.CACHE_META, { keyPath: 'key' })
         }
 
-        console.log('IndexedDB stores created')
       }
     })
   }
@@ -72,7 +70,6 @@ class IndexedDBStorage {
       this.updateCacheMeta('packages', new Date().toISOString())
       
       transaction.oncomplete = () => {
-        console.log('Packages stored in IndexedDB')
         resolve()
       }
       
@@ -102,7 +99,6 @@ class IndexedDBStorage {
       this.updateCacheMeta('items', new Date().toISOString())
       
       transaction.oncomplete = () => {
-        console.log('Items stored in IndexedDB')
         resolve()
       }
       
@@ -122,7 +118,6 @@ class IndexedDBStorage {
       const request = store.getAll()
       
       request.onsuccess = () => {
-        console.log('Packages retrieved from IndexedDB:', request.result.length)
         resolve(request.result)
       }
       
@@ -142,7 +137,6 @@ class IndexedDBStorage {
       const request = store.getAll()
       
       request.onsuccess = () => {
-        console.log('Items retrieved from IndexedDB:', request.result.length)
         resolve(request.result)
       }
       
@@ -218,7 +212,6 @@ class IndexedDBStorage {
       transaction.objectStore(STORE_NAMES.CACHE_META).clear()
       
       transaction.oncomplete = () => {
-        console.log('IndexedDB cleared')
         resolve()
       }
       

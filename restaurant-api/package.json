@@ -9,8 +9,10 @@
         "format": "prettier --write resources/js/"
     },
     "dependencies": {
+        "@zxing/library": "^0.21.3",
         "pinia": "^3.0.3",
         "vue": "^3.5.18",
+        "vue-qrcode-reader": "^5.7.3",
         "vue-router": "^4.5.1"
     },
     "devDependencies": {

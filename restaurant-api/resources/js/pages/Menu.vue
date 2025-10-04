@@ -89,7 +89,6 @@
   const fetchCategories = async () => {
     try {
       const data = await offlineStore.fetchPackages()
-      console.log('Categories response:', data)
       
       if (data.success && data.data && data.data.length > 0) {
         // Add fetched categories after "ALL"
@@ -126,7 +125,6 @@
   const fetchAllMenuItems = async () => {
     try {
       const data = await offlineStore.fetchItems()
-      console.log('All items response:', data)
       
       if (data.success && data.data) {
         allItems.value = data.data.map(item => ({
@@ -184,7 +182,6 @@
 
   // Apply filters from FilterSheet
   const applyFilters = (filters) => {
-    console.log('Applying filters:', filters)
     
     // Apply price filter
     priceFilter.value = filters.price || null
@@ -206,7 +203,6 @@
   
   function onAdd(it){
     // For now just log; later connect to Pinia cart
-    console.log('ADD', it.id)
   }
   </script>
   

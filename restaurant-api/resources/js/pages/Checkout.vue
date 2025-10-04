@@ -58,19 +58,66 @@
     <span>Subtotal:</span>
     <strong>${{ cart.total.toFixed(2) }}</strong>
   </div>
-  <div class="row">
-    <span>Tax:</span>
-    <strong>${{ (cart.total * taxRate).toFixed(2) }}</strong>
+  
+  <!-- VAT Row - Always show if VAT percentage > 0 -->
+  <div class="row" v-if="parseFloat(settingsStore.getVATPercentage) > 0">
+    <span>{{ settingsStore.getVATDisplayText }}:</span>
+    <strong>${{ settingsStore.calculateVAT(cart.total).toFixed(2) }}</strong>
   </div>
+  
+  <!-- Tax Row - Fallback for when VAT is 0 or not loaded -->
+  <div class="row" v-else>
+    <span>Tax:</span>
+    <strong>$0.00</strong>
+  </div>
+  
   <div class="row total">
     <span>Total:</span>
-    <strong>${{ (cart.total * (1+taxRate)).toFixed(2) }}</strong>
+    <strong>${{ settingsStore.calculateTotalWithVAT(cart.total).toFixed(2) }}</strong>
   </div>
+  
+  <!-- Debug info (remove in production) -->
+  <!-- <div class="debug-info" style="font-size: 12px; color: #666; margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+    <div>VAT Percentage: {{ settingsStore.getVATPercentage }}%</div>
+    <div>VAT Enabled: {{ settingsStore.isVATEnabled }}</div>
+    <div>Subtotal: ${{ cart.total.toFixed(2) }}</div>
+    <div>VAT Amount: ${{ settingsStore.calculateVAT(cart.total).toFixed(2) }}</div>
+    <div>Total with VAT: ${{ settingsStore.calculateTotalWithVAT(cart.total).toFixed(2) }}</div>
+    <div>Settings loaded: {{ settingsStore.lastFetched ? 'Yes' : 'No' }}</div>
+  </div> -->
+  
   <p class="delivery">Estimated delivery: 25–30 min</p>
 
-  <button class="orderbtn">PLACE ORDER</button>
+  <button class="orderbtn" @click="placeOrder" :disabled="isPlacingOrder">
+    {{ isPlacingOrder ? 'PLACING ORDER...' : 'PLACE ORDER' }}
+  </button>
 </section>
   
+      <!-- Order placement loader -->
+      <div v-if="isPlacingOrder" class="order-loader-overlay">
+        <div class="order-loader">
+          <div class="loader-spinner"></div>
+          <h3>Placing Your Order...</h3>
+          <p>Please wait while we process your order and create all necessary records.</p>
+        </div>
+      </div>
+
+      <!-- Success modal -->
+      <div v-if="showSuccessModal" class="success-modal-overlay">
+        <div class="success-modal">
+          <div class="success-icon">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3>Order Placed Successfully!</h3>
+          <p v-if="orderSuccessData">Order ID: {{ orderSuccessData.orderID }}</p>
+          <p>Your order has been received and is being prepared.</p>
+          <button class="back-to-menu-btn" @click="backToMenu">Back to Menu</button>
+        </div>
+      </div>
+
       <!-- Confirm delete modal -->
       <div v-if="confirmIdx !== null" class="overlay" @click.self="confirmIdx=null">
         <div class="modal">
@@ -86,17 +133,90 @@
   </template>
   
   <script setup>
-  import { ref } from 'vue'
+  import { ref, onMounted } from 'vue'
+  import { useRouter } from 'vue-router'
   import { useCart } from '../stores/cart'
+  import { useSettingsStore } from '../stores/settingsStore.js'
+  import { useTableStore } from '../stores/tableStore.js'
+  import axios from 'axios'
+  
+  const router = useRouter()
   const cart = useCart()
-  const taxRate = 0.08
-
+  const settingsStore = useSettingsStore()
+  const tableStore = useTableStore()
   const confirmIdx = ref(null) // which item index to delete
+  const isPlacingOrder = ref(false)
+  const showSuccessModal = ref(false)
+  const orderSuccessData = ref(null)
+
+  // Initialize settings on component mount
+  onMounted(async () => {
+    // If settings are not loaded, try to fetch them
+    if (!settingsStore.lastFetched) {
+      await settingsStore.fetchSettings()
+    }
+  })
   
   function askDelete(idx){ confirmIdx.value = idx }
   function doDelete(){
     if (confirmIdx.value !== null) cart.remove(confirmIdx.value)
     confirmIdx.value = null
+  }
+
+  function backToMenu() {
+    showSuccessModal.value = false
+    router.push('/')
+  }
+
+  async function placeOrder() {
+    if (!tableStore.hasTableData) {
+      alert('Please scan a table QR code first')
+      return
+    }
+
+    if (cart.items.length === 0) {
+      alert('Your cart is empty')
+      return
+    }
+
+    isPlacingOrder.value = true
+
+    try {
+      // Prepare order data
+      const orderData = {
+        items: cart.items.map(item => ({
+          itemID: item.id,
+          quantity: item.qty,
+          notes: item.notes || ''
+        })),
+        tableName: tableStore.getTableName,
+        tableID: tableStore.getTableID,
+        whouseID: tableStore.getWhouseID
+      }
+
+
+      // Call the API
+      const response = await axios.post('/api/orders', orderData)
+
+      if (response.data.success) {
+        // Store success data
+        orderSuccessData.value = response.data.data
+        
+        // Clear cart
+        cart.clearCart()
+        
+        // Show success modal
+        showSuccessModal.value = true
+      } else {
+        throw new Error(response.data.message || 'Failed to place order')
+      }
+
+    } catch (error) {
+      console.error('Order placement failed:', error)
+      alert(`Failed to place order: ${error.response?.data?.message || error.message}`)
+    } finally {
+      isPlacingOrder.value = false
+    }
   }
   </script>
   
@@ -158,7 +278,7 @@
 
 .trash{
   position:absolute; 
-  right:12px; bottom:12px;
+  right:12px; bottom:4px;
   display:grid;place-items:center;
   width:34px;height:34px;
   border-radius:10px;
@@ -217,6 +337,161 @@
 }
 .orderbtn:active{transform:scale(.98)}
 .orderbtn:hover{background:#15803d}
+  .orderbtn:disabled{
+    background:#9ca3af;
+    cursor:not-allowed;
+    transform:none;
+  }
+  .orderbtn:disabled:hover{background:#9ca3af}
+
+  /* Order placement loader */
+  .order-loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+  }
+
+  .order-loader {
+    background: white;
+    padding: 40px 30px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    max-width: 320px;
+    width: 90%;
+  }
+
+  .loader-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #0f2a2a;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+  }
+
+  .order-loader h3 {
+    margin: 0 0 12px 0;
+    color: #0f2a2a;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .order-loader p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Success modal */
+  .success-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+  }
+
+  .success-modal {
+    background: white;
+    padding: 40px 30px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    max-width: 360px;
+    width: 90%;
+    animation: successModalSlideIn 0.3s ease-out;
+  }
+
+  .success-icon {
+    color: #22c55e;
+    margin-bottom: 20px;
+    animation: successIconBounce 0.6s ease-out;
+  }
+
+  .success-modal h3 {
+    margin: 0 0 16px 0;
+    color: #0f2a2a;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .success-modal p {
+    margin: 0 0 12px 0;
+    color: #666;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .success-modal p:last-of-type {
+    margin-bottom: 24px;
+  }
+
+  .back-to-menu-btn {
+    background: #0f2a2a;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 140px;
+  }
+
+  .back-to-menu-btn:hover {
+    background: #1a3a3a;
+    transform: translateY(-1px);
+  }
+
+  .back-to-menu-btn:active {
+    transform: translateY(0);
+  }
+
+  @keyframes successModalSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes successIconBounce {
+    0% {
+      transform: scale(0);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
 
   </style>
   

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!isOnline" class="offline-indicator">
+  <div v-if="!isOnline && showBanner" class="offline-indicator">
     <div class="offline-banner">
       <span class="offline-icon">📡</span>
       <span class="offline-text">You're offline - showing cached data</span>
@@ -8,15 +8,53 @@
 </template>
 
 <script>
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useOfflineStore } from '../stores/offlineStore.js'
 
 export default {
   name: 'OfflineIndicator',
   setup() {
     const offlineStore = useOfflineStore()
+    const showBanner = ref(false)
+    let hideTimer = null
+    
+    const hideBannerAfterDelay = () => {
+      // Clear any existing timer
+      if (hideTimer) {
+        clearTimeout(hideTimer)
+      }
+      
+      // Show banner immediately when going offline
+      showBanner.value = true
+      
+      // Hide banner after 2.5 seconds with fade out
+      hideTimer = setTimeout(() => {
+        showBanner.value = false
+      }, 2500)
+    }
+    
+    // Watch for offline status changes
+    watch(() => offlineStore.isOnline, (isOnline) => {
+      if (!isOnline) {
+        hideBannerAfterDelay()
+      } else {
+        // Clear timer and hide banner when coming back online
+        if (hideTimer) {
+          clearTimeout(hideTimer)
+        }
+        showBanner.value = false
+      }
+    })
+    
+    onUnmounted(() => {
+      if (hideTimer) {
+        clearTimeout(hideTimer)
+      }
+    })
     
     return {
-      isOnline: offlineStore.isOnline
+      isOnline: offlineStore.isOnline,
+      showBanner
     }
   }
 }
@@ -41,6 +79,11 @@ export default {
   font-weight: 500;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   animation: slideDown 0.3s ease-out;
+  transition: opacity 0.3s ease-out;
+}
+
+.offline-indicator.fade-out .offline-banner {
+  opacity: 0;
 }
 
 .offline-icon {

@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <OfflineIndicator />
+    <TableIndicator />
     <router-view v-if="isInitialized" />
     <div v-else class="loading-screen">
       <div class="loading-content">
@@ -14,15 +15,21 @@
 <script>
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useOfflineStore } from './stores/offlineStore.js'
+import { useSettingsStore } from './stores/settingsStore.js'
+import { useTableStore } from './stores/tableStore.js'
 import OfflineIndicator from './components/OfflineIndicator.vue'
+import TableIndicator from './components/TableIndicator.vue'
 
 export default {
   name: 'App',
   components: {
-    OfflineIndicator
+    OfflineIndicator,
+    TableIndicator
   },
   setup() {
     const offlineStore = useOfflineStore()
+    const settingsStore = useSettingsStore()
+    const tableStore = useTableStore()
     const isInitialized = ref(false)
 
     const handleOnline = () => {
@@ -46,8 +53,14 @@ export default {
       
       // Initialize app - fetch all data and preload images
       try {
+        // Initialize table store first (handle QR code parameters)
+        tableStore.initializeTableStore()
+        
+        // Initialize system settings
+        await settingsStore.initializeSettings()
+        
+        // Initialize offline store
         await offlineStore.initializeApp()
-        console.log('App initialization completed successfully')
       } catch (error) {
         console.error('App initialization failed:', error)
       }

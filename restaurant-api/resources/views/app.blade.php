@@ -2,11 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <link rel="apple-touch-icon" href="/dist/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#0b0f12" />
-    <link rel="icon" href="/dist/favicon.ico">
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="shortcut icon" type="image/png" href="/logo.png">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Deegaan Restaurant</title>

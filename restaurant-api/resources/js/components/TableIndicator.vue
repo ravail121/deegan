@@ -1,5 +1,6 @@
 <template>
-  <div v-if="tableStore.shouldShowTableIndicator" class="table-indicator">
+  <!-- Table indicator hidden to prevent covering cart icon -->
+  <div v-if="false" class="table-indicator">
     <div class="table-banner">
       <span class="table-icon">🪑</span>
       <span class="table-text">Table: {{ tableStore.getTableDisplayName }}</span>

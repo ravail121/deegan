@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Notification System</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 0;
+            padding: 20px;
+            background-color: #000;
+            color: #0f0;
+        }
+        
+        .log {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        
+        .log-info {
+            color: #0f0;
+        }
+        
+        .log-success {
+            color: #ff0;
+        }
+        
+        .log-error {
+            color: #f00;
+        }
+        
+        .test-button {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: monospace;
+            font-weight: bold;
+            z-index: 1000;
+        }
+        
+        .test-button:hover {
+            background: #0a0;
+        }
+    </style>
+</head>
+<body>
+    <button class="test-button" onclick="testSound()">🔊 TEST SOUND</button>
+    
+    <div class="log" id="log">
+        <div class="log-entry log-info">Order Notification System Started...</div>
+        <div class="log-entry log-info">Click anywhere to enable audio notifications</div>
+        <div class="log-entry log-info">Click the TEST SOUND button to test audio</div>
+    </div>
+
+    <script>
+        /**
+         * Standalone Order Notification System
+         * 
+         * This file runs independently and checks for new e-menu orders every 10 seconds.
+         * When new orders are detected, it plays a notification sound.
+         * 
+         * Usage: Open this file in your browser for the restaurant system dashboard
+         */
+
+        class OrderNotificationSystem {
+            constructor() {
+                this.apiUrl = '/api/orders'; // Adjust this URL as needed
+                this.checkInterval = 10000; // 10 seconds
+                this.lastOrderId = null;
+                this.isRunning = false;
+                this.intervalId = null;
+                this.audioContext = null;
+                this.audioInitialized = false;
+                
+                // Initialize the system
+                this.init();
+            }
+
+            /**
+             * Initialize the notification system
+             */
+            init() {
+                console.log('🔔 Order Notification System initialized');
+                
+                // Add click handler to initialize audio on first user interaction
+                this.addAudioInitHandler();
+                
+                // Get the last order ID on startup
+                this.getLastOrderId().then(() => {
+                    this.startMonitoring();
+                }).catch(error => {
+                    console.error('❌ Failed to initialize notification system:', error);
+                });
+            }
+
+            /**
+             * Add click handler to initialize audio on first user interaction
+             */
+            addAudioInitHandler() {
+                const initAudio = () => {
+                    if (!this.audioInitialized) {
+                        this.audioInitialized = true;
+                        this.initAudioContext();
+                        // Remove the event listeners after first interaction
+                        document.removeEventListener('click', initAudio);
+                        document.removeEventListener('keydown', initAudio);
+                        document.removeEventListener('touchstart', initAudio);
+                    }
+                };
+
+                // Add event listeners for various user interactions
+                document.addEventListener('click', initAudio);
+                document.addEventListener('keydown', initAudio);
+                document.addEventListener('touchstart', initAudio);
+            }
+
+            /**
+             * Get the last order ID to establish baseline
+             */
+            async getLastOrderId() {
+                try {
+                    const response = await this.makeApiCall('GET', this.apiUrl + '/latest');
+                    if (response.success && response.data) {
+                        this.lastOrderId = response.data.orderID;
+                        console.log(`📋 Baseline order ID set to: ${this.lastOrderId}`);
+                    } else {
+                        // If no orders exist, start from 0
+                        this.lastOrderId = 0;
+                        console.log('📋 No existing orders found, starting from 0');
+                    }
+                } catch (error) {
+                    console.error('❌ Error getting last order ID:', error);
+                    this.lastOrderId = 0;
+                }
+            }
+
+            /**
+             * Start monitoring for new orders
+             */
+            startMonitoring() {
+                if (this.isRunning) {
+                    console.log('⚠️ Monitoring is already running');
+                    return;
+                }
+
+                this.isRunning = true;
+                console.log('🚀 Starting order monitoring...');
+                
+                // Check immediately
+                this.checkForNewOrders();
+                
+                // Then check every 10 seconds
+                this.intervalId = setInterval(() => {
+                    this.checkForNewOrders();
+                }, this.checkInterval);
+            }
+
+            /**
+             * Stop monitoring for new orders
+             */
+            stopMonitoring() {
+                if (!this.isRunning) {
+                    console.log('⚠️ Monitoring is not running');
+                    return;
+                }
+
+                this.isRunning = false;
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                }
+                console.log('⏹️ Order monitoring stopped');
+            }
+
+            /**
+             * Check for new orders
+             */
+            async checkForNewOrders() {
+                try {
+                    console.log('🔍 Checking for new orders...');
+                    
+                    // Get orders newer than our last known order
+                    const response = await this.makeApiCall('GET', `${this.apiUrl}/newer/${this.lastOrderId}`);
+                    
+                    if (response.success && response.data && response.data.length > 0) {
+                        console.log(`🎉 Found ${response.data.length} new order(s)!`);
+                        
+                        // Process each new order
+                        for (const order of response.data) {
+                            this.handleNewOrder(order);
+                        }
+                        
+                        // Update last order ID to the newest one
+                        const newestOrder = response.data[response.data.length - 1];
+                        this.lastOrderId = newestOrder.orderID;
+                        
+                    } else {
+                        console.log('📭 No new orders found');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Error checking for new orders:', error);
+                }
+            }
+
+            /**
+             * Handle a new order notification
+             */
+            handleNewOrder(order) {
+                // Play notification sound
+                this.playNotificationSound();
+            }
+
+            /**
+             * Play notification sound
+             */
+            playNotificationSound() {
+                try {
+                    // Method 1: Try Web Audio API with user interaction
+                    if (this.audioContext && this.audioContext.state === 'running') {
+                        this.playWebAudioBeep();
+                        return;
+                    }
+                    
+                    // Method 2: Use HTML5 Audio with data URI (more reliable)
+                    this.playHTML5Beep();
+                    
+                } catch (error) {
+                    console.error('❌ Error playing notification sound:', error);
+                    // Method 3: Fallback to system beep
+                    this.playSystemBeep();
+                }
+            }
+
+            /**
+             * Play beep using Web Audio API
+             */
+            playWebAudioBeep() {
+                try {
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    // Configure the beep
+                    oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    
+                    // Set volume
+                    gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
+                    
+                    // Play the beep
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.3);
+                    
+                    console.log('🔊 Web Audio beep played');
+                    
+                } catch (error) {
+                    console.error('❌ Web Audio beep failed:', error);
+                    this.playHTML5Beep();
+                }
+            }
+
+            /**
+             * Play beep using HTML5 Audio (most reliable)
+             */
+            playHTML5Beep() {
+                try {
+                    // Check if audio is allowed (user has interacted)
+                    if (!this.audioInitialized) {
+                        console.log('🔇 Audio not initialized - user interaction required');
+                        this.playSystemBeep();
+                        return;
+                    }
+                    
+                    // Create a simple beep sound using data URI (fixed)
+                    const beepData = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT';
+                    
+                    const audio = new Audio(beepData);
+                    audio.volume = 0.7;
+                    audio.play().then(() => {
+                        console.log('🔊 HTML5 beep played');
+                    }).catch((error) => {
+                        console.error('❌ HTML5 beep failed:', error);
+                        // Try alternative beep method
+                        this.playAlternativeBeep();
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ HTML5 beep creation failed:', error);
+                    this.playAlternativeBeep();
+                }
+            }
+
+            /**
+             * Alternative beep method using Web Audio API directly
+             */
+            playAlternativeBeep() {
+                try {
+                    if (!this.audioContext) {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    
+                    if (this.audioContext.state === 'suspended') {
+                        this.audioContext.resume();
+                    }
+                    
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    // Configure the beep
+                    oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    
+                    // Set volume
+                    gainNode.gain.setValueAtTime(0.5, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.4);
+                    
+                    // Play the beep
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.4);
+                    
+                    console.log('🔊 Alternative beep played');
+                    
+                } catch (error) {
+                    console.error('❌ Alternative beep failed:', error);
+                    this.playSystemBeep();
+                }
+            }
+
+            /**
+             * Fallback system beep
+             */
+            playSystemBeep() {
+                try {
+                    console.log('\x07'); // ASCII bell character
+                    console.log('🔔 System beep attempted');
+                } catch (error) {
+                    console.log('🔇 No audio support available');
+                }
+            }
+
+
+            /**
+             * Initialize audio context (call this on first user interaction)
+             */
+            initAudioContext() {
+                try {
+                    if (!this.audioContext) {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    
+                    if (this.audioContext.state === 'suspended') {
+                        this.audioContext.resume();
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    console.error('❌ Audio context initialization failed:', error);
+                    return false;
+                }
+            }
+
+
+
+
+            /**
+             * Make API call with error handling
+             */
+            async makeApiCall(method, url, data = null) {
+                try {
+                    const options = {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    };
+
+                    if (data) {
+                        options.body = JSON.stringify(data);
+                    }
+
+                    const response = await fetch(url, options);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    return await response.json();
+                    
+                } catch (error) {
+                    console.error('❌ API call failed:', error);
+                    throw error;
+                }
+            }
+
+            /**
+             * Get system status
+             */
+            getStatus() {
+                return {
+                    isRunning: this.isRunning,
+                    lastOrderId: this.lastOrderId,
+                    checkInterval: this.checkInterval,
+                    apiUrl: this.apiUrl
+                };
+            }
+
+            /**
+             * Update configuration
+             */
+            updateConfig(config) {
+                if (config.checkInterval) {
+                    this.checkInterval = config.checkInterval;
+                }
+                if (config.apiUrl) {
+                    this.apiUrl = config.apiUrl;
+                }
+                
+                // Restart monitoring if it's running
+                if (this.isRunning) {
+                    this.stopMonitoring();
+                    this.startMonitoring();
+                }
+            }
+        }
+
+        // Auto-initialize when script loads
+        let orderNotificationSystem;
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                orderNotificationSystem = new OrderNotificationSystem();
+            });
+        } else {
+            orderNotificationSystem = new OrderNotificationSystem();
+        }
+
+        // Expose to global scope for manual control
+        window.OrderNotificationSystem = OrderNotificationSystem;
+        window.orderNotificationSystem = orderNotificationSystem;
+        
+        // Simple beep function that works immediately
+        window.playBeep = function() {
+            try {
+                // Create audio context if it doesn't exist
+                if (!window.audioContext) {
+                    window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // Resume if suspended
+                if (window.audioContext.state === 'suspended') {
+                    window.audioContext.resume();
+                }
+                
+                // Create oscillator
+                const oscillator = window.audioContext.createOscillator();
+                const gainNode = window.audioContext.createGain();
+                
+                // Connect nodes
+                oscillator.connect(gainNode);
+                gainNode.connect(window.audioContext.destination);
+                
+                // Configure beep
+                oscillator.frequency.setValueAtTime(800, window.audioContext.currentTime);
+                oscillator.type = 'sine';
+                
+                // Set volume and fade out
+                gainNode.gain.setValueAtTime(0.5, window.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, window.audioContext.currentTime + 0.4);
+                
+                // Play beep
+                oscillator.start(window.audioContext.currentTime);
+                oscillator.stop(window.audioContext.currentTime + 0.4);
+                
+                return true;
+            } catch (error) {
+                console.error('Beep failed:', error);
+                return false;
+            }
+        };
+
+        // Test sound function
+        window.testSound = function() {
+            addLogEntry('🔊 Testing sound...', 'log-info');
+            
+            // Try simple beep first
+            if (window.playBeep()) {
+                addLogEntry('🔊 Test sound played successfully!', 'log-success');
+                return;
+            }
+            
+            // Fallback: try HTML5 Audio
+            try {
+                const audio = new Audio();
+                audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT';
+                audio.volume = 0.7;
+                audio.play().then(() => {
+                    addLogEntry('🔊 Fallback test sound played!', 'log-success');
+                }).catch((err) => {
+                    addLogEntry('❌ All sound methods failed: ' + err.message, 'log-error');
+                });
+            } catch (fallbackError) {
+                addLogEntry('❌ All sound methods failed: ' + fallbackError.message, 'log-error');
+            }
+        };
+
+        // Override console.log to show in our log
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLogEntry(args.join(' '), 'log-info');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLogEntry(args.join(' '), 'log-error');
+        };
+        
+        function addLogEntry(message, type = 'log-info') {
+            const log = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        // Wait for notification system to load, then start monitoring
+        function waitForSystem() {
+            if (window.orderNotificationSystem) {
+                addLogEntry('Notification system loaded', 'log-success');
+                
+                // Override the handleNewOrder method to show in log and play beep
+                const originalHandle = window.orderNotificationSystem.handleNewOrder;
+                window.orderNotificationSystem.handleNewOrder = function(order) {
+                    addLogEntry(`🔔 NEW ORDER! #${order.orderID} - Table: ${order.tableName} - Amount: $${order.orderAmount}`, 'log-success');
+                    
+                    // Play beep sound using our working method
+                    if (window.playBeep()) {
+                        addLogEntry('🔊 Order notification sound played!', 'log-success');
+                    } else {
+                        addLogEntry('🔇 Sound failed, using system beep', 'log-info');
+                        console.log('\x07'); // ASCII bell
+                    }
+                    
+                    return originalHandle.call(this, order);
+                };
+                
+                // Start monitoring automatically
+                setTimeout(() => {
+                    window.orderNotificationSystem.startMonitoring();
+                    addLogEntry('Auto-started monitoring for new orders...', 'log-info');
+                }, 1000);
+                
+            } else {
+                setTimeout(waitForSystem, 100);
+            }
+        }
+        
+        // Start waiting for the system
+        waitForSystem();
+        
+        // Add click handler to initialize audio
+        document.addEventListener('click', function() {
+            if (window.orderNotificationSystem && !window.orderNotificationSystem.audioInitialized) {
+                window.orderNotificationSystem.initAudioContext();
+                addLogEntry('Audio initialized - sound notifications enabled!', 'log-success');
+            }
+        });
+
+        // Console commands for testing
+        console.log(`
+🔔 Order Notification System Loaded!
+
+Available commands:
+- testSound()  // Test sound
+- playBeep()   // Play simple beep
+- orderNotificationSystem.getStatus() // Get system status
+`);
+    </script>
+</body>
+</html>

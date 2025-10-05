@@ -9,7 +9,7 @@ class MealOrderDetail extends Model
 {
     use HasFactory;
 
-    protected $table = 'rs_meal_order_details';
+        protected $table = 'rs_meal_order_details_temp';
     protected $primaryKey = 'detailID';
     public $timestamps = false;
 

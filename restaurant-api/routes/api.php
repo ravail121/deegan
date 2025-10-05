@@ -87,6 +87,8 @@ Route::prefix('settings')->group(function () {
 // Order Routes
 Route::prefix('orders')->group(function () {
     Route::post('/', [OrderController::class, 'placeOrder']);
+    Route::get('/latest', [OrderController::class, 'getLatestOrder']);
+    Route::get('/newer/{orderID}', [OrderController::class, 'getNewerOrders']);
     Route::get('/{orderID}', [OrderController::class, 'getOrder']);
     Route::get('/table/{tableID}', [OrderController::class, 'getOrdersByTable']);
     Route::put('/{orderID}/status', [OrderController::class, 'updateOrderStatus']);

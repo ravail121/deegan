@@ -260,6 +260,29 @@
   /* List area */
   .list{
     padding:14px; padding-bottom:24px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  /* iPad and larger screens - 2 columns */
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .list {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      padding: 16px;
+    }
+  }
+
+  /* Large screens - 3 columns */
+  @media (min-width: 1025px) {
+    .list {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      padding: 18px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
   }
 
   .welcome {

@@ -4,9 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\MealOrder;
 use App\Models\MealOrderDetail;
-use App\Models\SysInvoice;
-use App\Models\SysInvoiceDetail;
-use App\Models\FnClientActivity;
 use App\Models\SystemSettings;
 use App\Models\MealItem;
 use App\Models\MealPackage;
@@ -155,67 +152,13 @@ class OrderController extends Controller
                 MealOrderDetail::create($detail);
             }
 
-            // Create invoice
-            $invoice = SysInvoice::create([
-                'whouseID' => $request->whouseID,
-                'invceType' => 'restaurant',
-                'reference' => $order->orderID,
-                'payeeID' => '701',
-                'commissionerID' => 0,
-                'commissionAmount' => 0,
-                'commissionStatus' => 'pending',
-                'paidStatus' => 'unpaid',
-                'remarks' => "Restaurant order for table {$request->tableName}",
-                'financeYr' => $financeYr,
-                'status' => 'active',
-                'addedBy' => 'pwa',
-                'updatedBy' => 'pwa',
-                'addedDate' => Carbon::now(),
-                'updatedDate' => Carbon::now()
-            ]);
-
-            // Create invoice details
-            foreach ($orderDetails as $detail) {
-                SysInvoiceDetail::create([
-                    'invocID' => $invoice->invocID,
-                    'serviceType' => 'mealOrder',
-                    'reference' => $request->tableID,
-                    'orderID' => $order->orderID,
-                    'quantity' => $detail['quantity'],
-                    'price' => $detail['costPrice'],
-                    'discount' => floatval($detail['discount']),
-                    'paidStatus' => 'unpaid',
-                    'status' => 'active',
-                    'addedBy' => 'pwa',
-                    'updatedBy' => 'pwa',
-                    'addedDate' => Carbon::now(),
-                    'updatedDate' => Carbon::now(),
-                    'userGenerated' => 'pwa',
-                    'dateGenerated' => Carbon::now(),
-                    'whatoffered' => $detail['itemName'],
-                    'propertyprice' => $detail['costPrice']
-                ]);
-            }
-
-            // Create client activity
-            FnClientActivity::create([
-                'acvtyType' => 'restaurant',
-                'clientID' => '701',
-                'transRef' => $order->orderID,
-                'amountIN' => $orderAmount,
-                'amountOut' => 0,
-                'vat' => $vatValue,
-                'financeYr' => $financeYr,
-                'addedBy' => 'pwa',
-                'addedDate' => Carbon::now()
-            ]);
 
             // Commit transaction
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Order placed successfully',
+                'message' => 'Order placed successfully in temporary tables',
                 'data' => [
                     'orderID' => $order->orderID,
                     'orderAmount' => $orderAmount,
@@ -223,7 +166,8 @@ class OrderController extends Controller
                     'totalAmount' => $orderAmount + $vatValue,
                     'tableName' => $request->tableName,
                     'orderDate' => $order->addedDate,
-                    'orderTime' => $order->addedDate ? $order->addedDate->format('H:i:s') : null
+                    'orderTime' => $order->addedDate ? $order->addedDate->format('H:i:s') : null,
+                    'status' => 'temporary'
                 ]
             ]);
 
@@ -248,7 +192,7 @@ class OrderController extends Controller
     public function getOrder($orderID): JsonResponse
     {
         try {
-            $order = MealOrder::with(['orderDetails.mealItem', 'orderDetails.mealPackage'])
+            $order = MealOrder::with(['orderDetails'])
                             ->find($orderID);
 
             if (!$order) {
@@ -281,7 +225,7 @@ class OrderController extends Controller
     public function getOrdersByTable($tableID): JsonResponse
     {
         try {
-            $orders = MealOrder::with(['orderDetails.mealItem', 'orderDetails.mealPackage'])
+            $orders = MealOrder::with(['orderDetails'])
                              ->where('reference', $tableID)
                              ->orderBy('addedDate', 'desc')
                              ->get();
@@ -295,6 +239,86 @@ class OrderController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch orders',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get the latest order ID
+     *
+     * @return JsonResponse
+     */
+    public function getLatestOrder(): JsonResponse
+    {
+        try {
+            $latestOrder = MealOrder::orderBy('orderID', 'desc')->first();
+
+            if (!$latestOrder) {
+                return response()->json([
+                    'success' => true,
+                    'data' => null,
+                    'message' => 'No orders found'
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'orderID' => $latestOrder->orderID,
+                    'tableName' => $latestOrder->reference, // Using reference as tableName
+                    'orderAmount' => $latestOrder->orderAmount,
+                    'orderDate' => $latestOrder->addedDate
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch latest order',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get orders newer than specified order ID
+     *
+     * @param int $orderID
+     * @return JsonResponse
+     */
+    public function getNewerOrders($orderID): JsonResponse
+    {
+        try {
+            $orders = MealOrder::where('orderID', '>', $orderID)
+                             ->orderBy('orderID', 'asc')
+                             ->get();
+
+            $formattedOrders = $orders->map(function ($order) {
+                return [
+                    'orderID' => $order->orderID,
+                    'tableName' => $order->reference, // Using reference as tableName
+                    'tableID' => $order->reference,
+                    'whouseID' => $order->whouseID,
+                    'orderAmount' => $order->orderAmount,
+                    'vatValue' => $order->vatvalue,
+                    'totalAmount' => $order->orderAmount + $order->vatvalue,
+                    'orderDate' => $order->addedDate,
+                    'orderTime' => $order->addedDate ? $order->addedDate->format('H:i:s') : null,
+                    'status' => $order->status
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $formattedOrders,
+                'count' => $orders->count()
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch newer orders',
                 'error' => $e->getMessage()
             ], 500);
         }

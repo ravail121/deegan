@@ -104,14 +104,24 @@
   
   <style scoped>
   /* existing card styles */
-  .card{background:#f9f7f2;border-radius:16px;padding:12px;box-shadow:0 4px 14px rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.05);margin-bottom:14px}
+  .card{
+    background:#f9f7f2;
+    border-radius:16px;
+    padding:12px;
+    box-shadow:0 4px 14px rgba(0,0,0,.06);
+    border:1px solid rgba(0,0,0,.05);
+    margin-bottom:0; /* Remove margin since grid handles spacing */
+    height: fit-content; /* Prevent stretching */
+    display: flex;
+    flex-direction: column;
+  }
   .photo{width:100%;height:140px;object-fit:cover;border-radius:12px}
   .row{display:flex;align-items:center;justify-content:space-between}
   .head{margin-top:10px}
   .name{margin:0;font-weight:800;color:#153c3c;font-size:clamp(18px,4.5vw,22px)}
   .price{font-weight:800;color:#153c3c;font-size:16px}
-  .desc{margin:6px 0 8px;color:#425e5e;font-size:14px;line-height:1.3}
-  .foot{margin-top:6px}
+  .desc{margin:6px 0 8px;color:#425e5e;font-size:14px;line-height:1.3;flex-grow:1}
+  .foot{margin-top:auto;padding-top:6px}
   .badges{display:flex;gap:8px;align-items:center}
   .badge{padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#1b5a3d;background:#e6f2ea;border:1px solid #d5e8de}
   .add{margin-left:auto;background:#0e3a3a;color:#fff;font-weight:800;letter-spacing:.5px;border:0;border-radius:999px;padding:10px 16px;min-width:84px;box-shadow:0 6px 14px rgba(0,0,0,.15);transition:transform .06s ease, background .2s ease}

@@ -259,7 +259,9 @@ class OrderController extends Controller
                     'success' => true,
                     'data' => null,
                     'message' => 'No orders found'
-                ]);
+                ])->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                  ->header('Pragma', 'no-cache')
+                  ->header('Expires', '0');
             }
 
             return response()->json([
@@ -270,14 +272,18 @@ class OrderController extends Controller
                     'orderAmount' => $latestOrder->orderAmount,
                     'orderDate' => $latestOrder->addedDate
                 ]
-            ]);
+            ])->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+              ->header('Pragma', 'no-cache')
+              ->header('Expires', '0');
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch latest order',
                 'error' => $e->getMessage()
-            ], 500);
+            ], 500)->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                   ->header('Pragma', 'no-cache')
+                   ->header('Expires', '0');
         }
     }
 
@@ -313,14 +319,18 @@ class OrderController extends Controller
                 'success' => true,
                 'data' => $formattedOrders,
                 'count' => $orders->count()
-            ]);
+            ])->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+              ->header('Pragma', 'no-cache')
+              ->header('Expires', '0');
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch newer orders',
                 'error' => $e->getMessage()
-            ], 500);
+            ], 500)->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                   ->header('Pragma', 'no-cache')
+                   ->header('Expires', '0');
         }
     }
 

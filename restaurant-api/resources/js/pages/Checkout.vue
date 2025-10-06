@@ -35,6 +35,7 @@
     <ul class="meta">
       <li v-if="it.variant">Size: {{ it.variant.sizeName }} (${{ Number(it.variant.price).toFixed(2) }})</li>
       <li v-for="a in it.addOns || []" :key="a.id">+ {{ a.name }}</li>
+      <li v-if="it.notes" class="notes">Note: {{ it.notes }}</li>
     </ul>
 
     <!-- Trash at bottom right -->
@@ -231,14 +232,14 @@
   }
   .iconbtn{appearance:none;border:0;background:transparent;padding:6px;border-radius:10px;color:#0e3a3a;display:grid;place-items:center}
   .iconbtn:active{transform:scale(.96)}
-  .brand{display:flex;align-items:center;gap:8px;font-weight:800;color:#0e3a3a}
+  .brand{display:flex;align-items:center;gap:8px;font-family:'Poppins',sans-serif; font-weight:700;color:#0e3a3a}
   .logo{width:24px;height:24px;border-radius:50%}
   .spacer{flex:1}
   
   /* Title centered */
   .title{
     margin:14px 16px 8px;
-    font-size:24px;font-weight:900;color:#0e3a3a;letter-spacing:.6px;
+    font-family:'Poppins',sans-serif; font-size:24px;font-weight:800;color:#0e3a3a;letter-spacing:.6px;
     text-align:center;
   }
   
@@ -251,21 +252,25 @@
     margin-bottom:12px; position:relative;
   }
   .thumb{width:64px;height:64px;border-radius:10px;object-fit:cover}
-  .info{flex:1;min-width:0}
+  .info{flex:1;min-width:0;padding-bottom:50px;position:relative}
   
-  .name{margin:0;font-weight:800;font-size:16px;color:#102f2f}
+  .name{margin:0;font-family:'Poppins',sans-serif; font-weight:600;font-size:16px;color:#102f2f}
   .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .controls{display:flex;align-items:center;gap:8px}
 
 /* qty */
-.qtybox{display:flex;align-items:center;gap:10px;background:#f0f2ef;border-radius:10px;padding:4px 8px}
+.qtybox{display:flex;align-items:center;gap:12px;background:#f0f2ef;border-radius:10px;padding:6px 10px}
 .qtybox button{
-  width:28px;height:28px;border-radius:8px;border:none;background:#ffffff;
-  box-shadow:0 1px 4px rgba(0,0,0,.08);font-size:18px;font-weight:700;color:#0e3a3a
+  width:36px;height:36px;border-radius:8px;border:none;background:#ffffff;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);font-family:'Poppins',sans-serif; font-size:20px;font-weight:700;color:#0e3a3a;
+  cursor:pointer;transition:background .2s ease
 }
-.qtybox button:disabled{opacity:.45}
-  .meta{list-style:none;margin:6px 0 0;padding:0;color:#3a5656;font-size:13px}
+.qtybox button:hover{background:#f8f8f8}
+.qtybox button:active{transform:scale(.95)}
+.qtybox button:disabled{opacity:.45;cursor:not-allowed}
+  .meta{list-style:none;margin:6px 0 0;padding:0;color:#3a5656;font-family:'Poppins',sans-serif; font-size:13px;font-weight:400;padding-right:50px}
   .meta li{margin:2px 0}
+  .meta li.notes{color:#0e3a3a;font-style:italic;background:#f0f2ef;padding:4px 8px;border-radius:6px;margin-top:4px}
   
   .line{
   position:relative;
@@ -278,7 +283,7 @@
 
 .trash{
   position:absolute; 
-  right:12px; bottom:4px;
+  right:12px; bottom:8px;
   display:grid;place-items:center;
   width:34px;height:34px;
   border-radius:10px;
@@ -286,6 +291,7 @@
   background:#fff;
   color:#b91c1c;
   box-shadow:0 2px 6px rgba(0,0,0,.06);
+  z-index:2;
 }
 
   /* Delete button (bottom-right) */
@@ -297,16 +303,16 @@
   }
   
   /* Empty state */
-  .empty{padding:24px 16px;color:#3a5656;text-align:center}
+  .empty{padding:24px 16px;color:#3a5656;text-align:center;font-family:'Poppins',sans-serif; font-weight:400}
   
   /* Confirm modal */
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:50}
   .modal{background:#fff;width:90%;max-width:420px;border-radius:14px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.25);animation:fadeIn .2s ease}
   @keyframes fadeIn{from{opacity:.6;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-  .confirm-title{margin:0 0 6px;font-size:18px;font-weight:800;color:#0e3a3a;text-align:center}
-  .confirm-text{margin:0 0 16px;color:#425e5e;font-size:14px;text-align:center}
+  .confirm-title{margin:0 0 6px;font-family:'Poppins',sans-serif; font-size:18px;font-weight:700;color:#0e3a3a;text-align:center}
+  .confirm-text{margin:0 0 16px;color:#425e5e;font-family:'Poppins',sans-serif; font-size:14px;font-weight:400;text-align:center}
   .actions{display:flex;gap:10px}
-  .cancel,.danger{flex:1;padding:12px;border-radius:999px;border:none;font-weight:800;cursor:pointer}
+  .cancel,.danger{flex:1;padding:12px;border-radius:999px;border:none;font-family:'Poppins',sans-serif; font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer}
   .cancel{background:#eef2f2;color:#0e3a3a}
   .danger{background:#dc2626;color:#fff}
 
@@ -320,19 +326,19 @@
 }
 .row{
   display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:10px;font-size:15px;color:#0f2a2a;
+  margin-bottom:10px;font-family:'Poppins',sans-serif; font-size:15px;font-weight:400;color:#0f2a2a;
 }
-.row.total{font-size:17px;font-weight:900;color:#0e3a3a}
+.row.total{font-size:17px;font-weight:700;color:#0e3a3a}
 .delivery{
-  margin:10px 0 16px;font-size:13px;color:#64706e;text-align:center;
+  margin:10px 0 16px;font-family:'Poppins',sans-serif; font-size:13px;font-weight:400;color:#64706e;text-align:center;
 }
 
 .orderbtn{
   display:block;width:100%;
   background:#16a34a;color:#fff;
   border:none;border-radius:12px;
-  padding:16px;font-size:17px;font-weight:800;
-  letter-spacing:.5px;
+  padding:16px;font-family:'Poppins',sans-serif; font-size:17px;font-weight:700;
+  text-transform:uppercase; letter-spacing:.8px;
   box-shadow:0 4px 12px rgba(0,0,0,.15);
 }
 .orderbtn:active{transform:scale(.98)}
@@ -382,14 +388,15 @@
   .order-loader h3 {
     margin: 0 0 12px 0;
     color: #0f2a2a;
-    font-size: 18px;
+    font-family:'Poppins',sans-serif; font-size: 18px;
     font-weight: 600;
   }
 
   .order-loader p {
     margin: 0;
     color: #666;
-    font-size: 14px;
+    font-family:'Poppins',sans-serif; font-size: 14px;
+    font-weight: 400;
     line-height: 1.4;
   }
 
@@ -433,14 +440,15 @@
   .success-modal h3 {
     margin: 0 0 16px 0;
     color: #0f2a2a;
-    font-size: 20px;
+    font-family:'Poppins',sans-serif; font-size: 20px;
     font-weight: 600;
   }
 
   .success-modal p {
     margin: 0 0 12px 0;
     color: #666;
-    font-size: 14px;
+    font-family:'Poppins',sans-serif; font-size: 14px;
+    font-weight: 400;
     line-height: 1.4;
   }
 
@@ -454,7 +462,7 @@
     border: none;
     padding: 12px 24px;
     border-radius: 8px;
-    font-size: 16px;
+    font-family:'Poppins',sans-serif; font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;

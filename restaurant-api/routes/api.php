@@ -7,6 +7,7 @@ use App\Http\Controllers\MealItemController;
 use App\Http\Controllers\AddonController;
 use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\Api\GuestSessionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,6 +22,20 @@ use App\Http\Controllers\OrderController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+/*
+|--------------------------------------------------------------------------
+| Guest Session API Routes (Public - No Auth Required)
+|--------------------------------------------------------------------------
+*/
+
+// Guest Session Routes
+Route::prefix('guest')->group(function () {
+    Route::post('/session', [GuestSessionController::class, 'createGuestSession']);
+    Route::get('/session', [GuestSessionController::class, 'getGuestSession'])->middleware('auth:sanctum');
+    Route::post('/session/refresh', [GuestSessionController::class, 'refreshGuestSession'])->middleware('auth:sanctum');
+    Route::post('/session/data', [GuestSessionController::class, 'updateSessionData'])->middleware('auth:sanctum');
 });
 
 /*

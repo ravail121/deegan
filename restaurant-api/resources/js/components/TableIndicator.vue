@@ -63,7 +63,8 @@ export default {
 }
 
 .table-text {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
 }
 
 .clear-btn {

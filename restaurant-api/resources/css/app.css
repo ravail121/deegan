@@ -1,0 +1,118 @@
+/* Import Poppins font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Global Typography System */
+:root {
+  --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
+}
+
+/* Global font family application */
+* {
+  font-family: var(--font-family);
+}
+
+body {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-regular);
+}
+
+/* Typography Classes */
+.font-heading {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-bold);
+}
+
+.font-heading-semibold {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-semibold);
+}
+
+.font-item-name {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-medium);
+}
+
+.font-description {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-regular);
+}
+
+.font-button {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Heading Styles */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-bold);
+}
+
+h1 {
+  font-weight: var(--font-weight-extrabold);
+}
+
+h2 {
+  font-weight: var(--font-weight-bold);
+}
+
+h3 {
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Button Styles */
+button {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Input and Form Elements */
+input, textarea, select {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-regular);
+}
+
+/* Prevent Zooming and Double-tap Zoom */
+* {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+/* Allow text selection for input fields and text areas */
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  -khtml-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Prevent double-tap zoom on iOS */
+html {
+  -ms-touch-action: manipulation;
+  touch-action: manipulation;
+}
+
+body {
+  -ms-touch-action: manipulation;
+  touch-action: manipulation;
+}

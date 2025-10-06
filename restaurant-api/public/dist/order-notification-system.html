@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Notification System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: monospace;
+            font-family: 'Poppins', monospace;
             margin: 0;
             padding: 20px;
             background-color: #000;
@@ -45,8 +48,10 @@
             padding: 10px 15px;
             border-radius: 5px;
             cursor: pointer;
-            font-family: monospace;
-            font-weight: bold;
+            font-family: 'Poppins', monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             z-index: 1000;
         }
         
@@ -60,8 +65,9 @@
     
     <div class="log" id="log">
         <div class="log-entry log-info">Order Notification System Started...</div>
-        <div class="log-entry log-info">Click anywhere to enable audio notifications</div>
+        <div class="log-entry log-success">⚠️ IMPORTANT: Click anywhere on this page to enable audio notifications</div>
         <div class="log-entry log-info">Click the TEST SOUND button to test audio</div>
+        <div class="log-entry log-info">Without clicking first, new orders will only show system beep</div>
     </div>
 
     <script>
@@ -386,12 +392,19 @@
              */
             async makeApiCall(method, url, data = null) {
                 try {
+                    // Add cache-busting parameter to prevent browser caching
+                    const separator = url.includes('?') ? '&' : '?';
+                    const cacheBuster = `${separator}_t=${Date.now()}&_r=${Math.random()}`;
+                    const urlWithCacheBuster = url + cacheBuster;
+
                     const options = {
                         method: method,
                         headers: {
                             'Content-Type': 'application/json',
                             'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache'
                         }
                     };
 
@@ -399,7 +412,7 @@
                         options.body = JSON.stringify(data);
                     }
 
-                    const response = await fetch(url, options);
+                    const response = await fetch(urlWithCacheBuster, options);
                     
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
@@ -558,12 +571,33 @@
                 window.orderNotificationSystem.handleNewOrder = function(order) {
                     addLogEntry(`🔔 NEW ORDER! #${order.orderID} - Table: ${order.tableName} - Amount: $${order.orderAmount}`, 'log-success');
                     
-                    // Play beep sound using our working method
+                    // Try to play beep sound
                     if (window.playBeep()) {
                         addLogEntry('🔊 Order notification sound played!', 'log-success');
                     } else {
-                        addLogEntry('🔇 Sound failed, using system beep', 'log-info');
-                        console.log('\x07'); // ASCII bell
+                        // If audio context not initialized, try to initialize it
+                        if (!window.audioContext || window.audioContext.state === 'suspended') {
+                            try {
+                                if (!window.audioContext) {
+                                    window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                                }
+                                window.audioContext.resume();
+                                
+                                // Try beep again
+                                if (window.playBeep()) {
+                                    addLogEntry('🔊 Order notification sound played!', 'log-success');
+                                } else {
+                                    addLogEntry('🔇 Sound failed, using system beep', 'log-info');
+                                    console.log('\x07'); // ASCII bell
+                                }
+                            } catch (error) {
+                                addLogEntry('🔇 Audio initialization failed, using system beep', 'log-info');
+                                console.log('\x07'); // ASCII bell
+                            }
+                        } else {
+                            addLogEntry('🔇 Sound failed, using system beep', 'log-info');
+                            console.log('\x07'); // ASCII bell
+                        }
                     }
                     
                     return originalHandle.call(this, order);
@@ -583,13 +617,23 @@
         // Start waiting for the system
         waitForSystem();
         
-        // Add click handler to initialize audio
-        document.addEventListener('click', function() {
+        // Initialize audio context on any user interaction
+        function initializeAudioOnInteraction() {
             if (window.orderNotificationSystem && !window.orderNotificationSystem.audioInitialized) {
                 window.orderNotificationSystem.initAudioContext();
                 addLogEntry('Audio initialized - sound notifications enabled!', 'log-success');
+                
+                // Remove event listeners after initialization
+                document.removeEventListener('click', initializeAudioOnInteraction);
+                document.removeEventListener('keydown', initializeAudioOnInteraction);
+                document.removeEventListener('touchstart', initializeAudioOnInteraction);
             }
-        });
+        }
+
+        // Add multiple event listeners for audio initialization
+        document.addEventListener('click', initializeAudioOnInteraction);
+        document.addEventListener('keydown', initializeAudioOnInteraction);
+        document.addEventListener('touchstart', initializeAudioOnInteraction);
 
         // Console commands for testing
         console.log(`

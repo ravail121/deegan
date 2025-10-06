@@ -216,7 +216,7 @@
     height:56px; padding:0 14px; background:#f7f7f4e6; backdrop-filter:saturate(1.2) blur(8px);
     border-bottom:1px solid rgba(0,0,0,.06);
   }
-  .title{margin:0; letter-spacing:.5px; font-weight:900; font-size:20px; color:#0e3a3a;}
+  .title{margin:0; font-family:'Poppins',sans-serif; letter-spacing:.5px; font-weight:800; font-size:20px; color:#0e3a3a;}
   .iconbtn{appearance:none; border:0; background:transparent; padding:6px; border-radius:10px; color:#0e3a3a; display:grid; place-items:center;}
   .iconbtn:active{transform:scale(.96)}
   
@@ -243,13 +243,13 @@
   padding:10px 14px; border-radius:999px;
   border:1px solid rgba(0,0,0,.12);
   background:#0e3a3a; color:#fff;
-  font-weight:800; font-size:14px;
+  font-family:'Poppins',sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:.5px; font-size:14px;
   box-shadow:0 2px 6px rgba(0,0,0,.12);
 }
   .pill{
     flex:0 0 auto; display:inline-flex; align-items:center; gap:8px;
     padding:10px 14px; border-radius:999px; border:1px solid rgba(0,0,0,.08);
-    background:#ffffff; color:#0e3a3a; font-weight:700; font-size:14px;
+    background:#ffffff; color:#0e3a3a; font-family:'Poppins',sans-serif; font-weight:600; font-size:14px;
     box-shadow:0 2px 6px rgba(0,0,0,.04); transition:background .2s ease, color .2s ease, transform .06s ease;
   }
   .pill:active{transform:scale(.98)}
@@ -310,7 +310,7 @@
 .cartbtn .badge{
   position:absolute; top:-4px; right:-4px;
   background:#dc2626; color:#fff; border-radius:999px;
-  padding:2px 7px; font-size:12px; font-weight:800;
+  padding:2px 7px; font-family:'Poppins',sans-serif; font-size:12px; font-weight:700;
   line-height:1;
 }
 

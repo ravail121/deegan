@@ -50,6 +50,17 @@
               <button @click="qty++">+</button>
             </div>
           </section>
+
+          <!-- Customer Notes -->
+          <section class="section">
+            <h3>Special Instructions</h3>
+            <textarea 
+              v-model="customerNotes" 
+              placeholder="Any special requests or dietary requirements..."
+              class="notes-input"
+              rows="3"
+            ></textarea>
+          </section>
   
           <!-- Actions -->
           <div class="actions">
@@ -73,12 +84,14 @@
   const qty = ref(1)
   const selectedVariant = ref(null)
   const selectedAddOns = ref([])
+  const customerNotes = ref('')
   
   // Reset modal state when opening
   watch(showModal, (isOpen) => {
     if (isOpen) {
       qty.value = 1
       selectedAddOns.value = []
+      customerNotes.value = ''
       // Auto-select first size if available
       selectedVariant.value = props.item.sizes && props.item.sizes.length > 0 ? props.item.sizes[0] : null
     }
@@ -96,7 +109,8 @@
     price: basePrice + addOnsTotal,
     variant: selectedVariant.value,
     addOns: selectedAddOns.value,
-    qty: qty.value
+    qty: qty.value,
+    notes: customerNotes.value
   })
   showModal.value = false
 }
@@ -118,13 +132,13 @@
   .photo{width:100%;height:140px;object-fit:cover;border-radius:12px}
   .row{display:flex;align-items:center;justify-content:space-between}
   .head{margin-top:10px}
-  .name{margin:0;font-weight:800;color:#153c3c;font-size:clamp(18px,4.5vw,22px)}
-  .price{font-weight:800;color:#153c3c;font-size:16px}
-  .desc{margin:6px 0 8px;color:#425e5e;font-size:14px;line-height:1.3;flex-grow:1}
+  .name{margin:0;font-family:'Poppins',sans-serif;font-weight:600;color:#153c3c;font-size:clamp(18px,4.5vw,22px)}
+  .price{font-family:'Poppins',sans-serif;font-weight:700;color:#153c3c;font-size:16px}
+  .desc{margin:6px 0 8px;font-family:'Poppins',sans-serif;font-weight:400;color:#425e5e;font-size:14px;line-height:1.3;flex-grow:1}
   .foot{margin-top:auto;padding-top:6px}
   .badges{display:flex;gap:8px;align-items:center}
-  .badge{padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#1b5a3d;background:#e6f2ea;border:1px solid #d5e8de}
-  .add{margin-left:auto;background:#0e3a3a;color:#fff;font-weight:800;letter-spacing:.5px;border:0;border-radius:999px;padding:10px 16px;min-width:84px;box-shadow:0 6px 14px rgba(0,0,0,.15);transition:transform .06s ease, background .2s ease}
+  .badge{padding:6px 10px;border-radius:999px;font-size:12px;font-family:'Poppins',sans-serif;font-weight:700;color:#1b5a3d;background:#e6f2ea;border:1px solid #d5e8de}
+  .add{margin-left:auto;background:#0e3a3a;color:#fff;font-family:'Poppins',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.8px;border:0;border-radius:999px;padding:10px 16px;min-width:84px;box-shadow:0 6px 14px rgba(0,0,0,.15);transition:transform .06s ease, background .2s ease}
   .add:active{transform:scale(.98)}
   .add:hover{background:#0c3030}
   
@@ -132,14 +146,18 @@
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:50}
   .modal{background:#fff;width:100%;max-width:500px;border-radius:20px 20px 0 0;padding:20px;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease}
   @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
-  .title{margin:0 0 12px;font-size:20px;font-weight:700;text-align:center}
+  .title{margin:0 0 12px;font-family:'Poppins',sans-serif;font-size:20px;font-weight:700;text-align:center}
   .section{margin:16px 0}
-  .section h3{margin:0 0 8px;font-size:16px;font-weight:600}
-  .option{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:14px}
-  .qty{display:flex;align-items:center;gap:14px;font-size:16px;font-weight:700}
-  .qty button{width:32px;height:32px;border-radius:50%;border:none;background:#eee;font-weight:700;font-size:16px}
+  .section h3{margin:0 0 8px;font-family:'Poppins',sans-serif;font-size:16px;font-weight:600}
+  .option{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-family:'Poppins',sans-serif;font-size:14px;font-weight:400}
+  .qty{display:flex;align-items:center;gap:16px;font-family:'Poppins',sans-serif;font-size:16px;font-weight:700}
+  .qty button{width:40px;height:40px;border-radius:50%;border:none;background:#eee;font-family:'Poppins',sans-serif;font-weight:700;font-size:18px;cursor:pointer;transition:background .2s ease}
+  .qty button:hover{background:#ddd}
+  .qty button:active{transform:scale(.95)}
+  .notes-input{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-family:'Poppins',sans-serif;font-size:14px;font-weight:400;resize:vertical;min-height:60px}
+  .notes-input:focus{outline:none;border-color:#0e3a3a;box-shadow:0 0 0 2px rgba(14,58,58,.1)}
   .actions{display:flex;justify-content:space-between;margin-top:20px;gap:10px}
-  .cancel,.confirm{flex:1;padding:12px;border-radius:999px;font-weight:700;border:none;cursor:pointer}
+  .cancel,.confirm{flex:1;padding:12px;border-radius:999px;font-family:'Poppins',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.5px;border:none;cursor:pointer}
   .cancel{background:#eee;color:#444}
   .confirm{background:#0e3a3a;color:#fff}
   </style>

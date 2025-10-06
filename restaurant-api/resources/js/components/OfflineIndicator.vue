@@ -92,7 +92,8 @@ export default {
 }
 
 .offline-text {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
 }
 
 @keyframes slideDown {

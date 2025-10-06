@@ -104,9 +104,9 @@ const selectedCategories = ref([])
   }
   @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
   
-  .title{margin:0 0 6px; text-align:center; font-weight:900; font-size:22px; color:#0e3a3a}
+  .title{margin:0 0 6px; text-align:center; font-family:'Poppins',sans-serif; font-weight:800; font-size:22px; color:#0e3a3a}
   .section{margin:14px 2px}
-  .section h3{margin:0 0 10px; font-weight:800; font-size:16px; color:#163d3d}
+  .section h3{margin:0 0 10px; font-family:'Poppins',sans-serif; font-weight:700; font-size:16px; color:#163d3d}
   
   .grid2{
     display:grid; grid-template-columns:1fr 1fr; gap:10px 14px;
@@ -114,7 +114,7 @@ const selectedCategories = ref([])
   .opt{
     display:flex; align-items:center; gap:10px;
     padding:8px 10px; border:1px solid rgba(0,0,0,.08); border-radius:10px;
-    background:#f7f7f4;
+    background:#f7f7f4; font-family:'Poppins',sans-serif; font-weight:400;
   }
   .opt input{ width:18px; height:18px }
   
@@ -126,7 +126,7 @@ const selectedCategories = ref([])
     display:flex; gap:10px; margin-top:14px;
   }
   .ghost, .primary{
-    flex:1; padding:12px; border-radius:12px; font-weight:800; border:none;
+    flex:1; padding:12px; border-radius:12px; font-family:'Poppins',sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:.5px; border:none;
   }
   .ghost{ background:#eef2f2; color:#0e3a3a }
   .primary{ background:#1a7a45; color:#fff }
@@ -139,6 +139,7 @@ const selectedCategories = ref([])
 }
 .range-label{
   margin-top:6px;
+  font-family:'Poppins',sans-serif;
   font-size:14px;
   font-weight:600;
   color:#0e3a3a;

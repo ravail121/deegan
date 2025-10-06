@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" href="/logo.png">
     <link rel="shortcut icon" type="image/png" href="/logo.png">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Deegaan Restaurant</title>
     
     <!-- PWA Manifest -->
@@ -79,6 +79,26 @@
       if (!navigator.onLine) {
         document.body.classList.add('offline');
       }
+      
+      // Prevent double-click zoom
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', function (event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+          event.preventDefault();
+        }
+        lastTouchEnd = now;
+      }, false);
+      
+      // Prevent double-click zoom on desktop
+      document.addEventListener('dblclick', function (event) {
+        event.preventDefault();
+      }, false);
+      
+      // Disable context menu to prevent zoom options
+      document.addEventListener('contextmenu', function (event) {
+        event.preventDefault();
+      }, false);
     </script>
   </body>
 </html>

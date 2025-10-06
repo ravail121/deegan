@@ -17,6 +17,8 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { useOfflineStore } from './stores/offlineStore.js'
 import { useSettingsStore } from './stores/settingsStore.js'
 import { useTableStore } from './stores/tableStore.js'
+import { useCart } from './stores/cart.js'
+import { useGuestSession } from './stores/guestSession.js'
 import OfflineIndicator from './components/OfflineIndicator.vue'
 import TableIndicator from './components/TableIndicator.vue'
 
@@ -30,6 +32,8 @@ export default {
     const offlineStore = useOfflineStore()
     const settingsStore = useSettingsStore()
     const tableStore = useTableStore()
+    const cart = useCart()
+    const guestSession = useGuestSession()
     const isInitialized = ref(false)
 
     const handleOnline = () => {
@@ -53,7 +57,10 @@ export default {
       
       // Initialize app - fetch all data and preload images
       try {
-        // Initialize table store first (handle QR code parameters)
+        // Initialize guest session first
+        await guestSession.initializeSession()
+        
+        // Initialize table store (handle QR code parameters)
         tableStore.initializeTableStore()
         
         // Initialize system settings
@@ -108,9 +115,9 @@ export default {
 }
 
 .loading-content h2 {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 18px;
-  font-weight: 500;
+  font-weight: 600;
   margin: 0;
   color: #ffffff;
 }

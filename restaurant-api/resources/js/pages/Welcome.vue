@@ -70,19 +70,25 @@
   }
   
   .welcome {
+    font-family: 'Poppins', sans-serif;
     font-size: 1.5rem;
     font-weight: 700;
     margin: 0;
+    color: #C3A77F;
   }
   
   .brand {
+    font-family: 'Poppins', sans-serif;
     font-size: 2rem;
-    font-weight: 900;
+    font-weight: 800;
     margin: .3rem 0 1rem;
+    color: #C3A77F;
   }
   
   .subtitle {
+    font-family: 'Poppins', sans-serif;
     font-size: 1rem;
+    font-weight: 400;
     color: #d1d5db;
     margin-bottom: 1.5rem;
   }
@@ -104,8 +110,11 @@
   .btn {
     background: #166534;
     color: #fff;
+    font-family: 'Poppins', sans-serif;
     font-size: 1.1rem;
     font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
     padding: 0.9rem 2.5rem;
     border: none;
     border-radius: 999px;

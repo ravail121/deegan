@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MealItem;
+use App\Models\MealNote;
 use Illuminate\Http\Request;
 
 class MealItemController extends Controller
@@ -16,7 +17,7 @@ class MealItemController extends Controller
     {
         $items = MealItem::active()
                         ->ordered()
-                        ->with(['package', 'activeSizes', 'activeAddons'])
+                        ->with(['package', 'activeSizes', 'activeAddons', 'notes'])
                         ->get();
 
         return response()->json([
@@ -36,7 +37,7 @@ class MealItemController extends Controller
         $items = MealItem::active()
                         ->availableNow()
                         ->ordered()
-                        ->with(['package', 'activeSizes', 'activeAddons'])
+                        ->with(['package', 'activeSizes', 'activeAddons', 'notes'])
                         ->get();
 
         return response()->json([
@@ -57,7 +58,7 @@ class MealItemController extends Controller
         $items = MealItem::where('packageID', $packageId)
                         ->active()
                         ->ordered()
-                        ->with(['package', 'activeSizes', 'activeAddons'])
+                        ->with(['package', 'activeSizes', 'activeAddons', 'notes'])
                         ->get();
 
         return response()->json([
@@ -79,7 +80,7 @@ class MealItemController extends Controller
                         ->active()
                         ->availableNow()
                         ->ordered()
-                        ->with(['package', 'activeSizes', 'activeAddons'])
+                        ->with(['package', 'activeSizes', 'activeAddons', 'notes'])
                         ->get();
 
         return response()->json([

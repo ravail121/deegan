@@ -34,11 +34,12 @@
         </button>
       </nav>
       <div class="filters-row">
-            <button class="filterbtn" @click="showFilters = true">
+            <button class="filterbtn" :class="{ 'has-filters': hasActiveFilters }" @click="showFilters = true">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 6h16M7 12h10M10 18h4" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
                 <span>Filters</span>
+                <span v-if="hasActiveFilters" class="filter-badge">{{ activeFilterCount }}</span>
             </button>
         </div>
       <!-- Items -->
@@ -49,6 +50,16 @@
           :item="it"
           @add="onAdd"
         />
+        
+        <!-- Empty State -->
+        <div v-if="filteredItems.length === 0" class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <h3 class="empty-title">No items found</h3>
+          <p class="empty-text">Try adjusting your filters or search terms</p>
+          <button v-if="hasActiveFilters" class="reset-btn" @click="resetAllFilters">
+            Clear All Filters
+          </button>
+        </div>
       </main>
     </div>
     <FilterSheet
@@ -108,18 +119,47 @@
     }
   }
 
-  onMounted(async () => {
-    // Get data from offline store (already loaded by app initialization)
-    await fetchCategories()
-    await fetchAllMenuItems()
-    // Apply initial filters after data is loaded
-    applyCurrentFilters()
-  })
-  
   // Menu items from API
   const items = ref([])
   const allItems = ref([]) // Store all fetched items
   const priceFilter = ref(null) // Track current price filter
+  const categoryFilters = ref([]) // Track selected categories from filter
+  const searchQuery = ref('') // Track search query
+
+  // Load data from offline store cache
+  const loadCachedData = () => {
+    // Load categories from cached packages
+    const cachedPackages = offlineStore.getCachedPackages
+    if (cachedPackages && cachedPackages.length > 0) {
+      const fetchedCategories = cachedPackages.map(pkg => ({
+        id: pkg.packageID.toString(),
+        name: pkg.packageName,
+        image: pkg.photo80 ? `https://menu.deegaan.so/assets/images/meals/packages/small80/${pkg.photo80}` : '/images/dishes/default.jpg'
+      }))
+      
+      categories.value = [
+        { id: 'all', name: 'All', emoji: '🍲', image: null },
+        ...fetchedCategories
+      ]
+    }
+    
+    // Load items from cached items
+    const cachedItems = offlineStore.getCachedItems
+    if (cachedItems && cachedItems.length > 0) {
+      allItems.value = cachedItems.map(item => ({
+        id: item.itemID.toString(),
+        name: item.itemName,
+        price: parseFloat(item.costPrice),
+        desc: item.description || '',
+        cat: item.packageID.toString(),
+        image: item.photo320 ? `https://menu.deegaan.so/assets/images/meals/items/middle320/${item.photo320}` : '/images/dishes/default.jpg',
+        badge: item.isVegetarian ? 'Vegetarian' : (item.isSpicy ? 'Spicy' : ''),
+        sizes: item.active_sizes || [],
+        addons: item.active_addons || [],
+        notes: item.notes || []
+      }))
+    }
+  }
 
   // Fetch all menu items with offline support
   const fetchAllMenuItems = async () => {
@@ -136,17 +176,35 @@
           image: item.photo320 ? `https://menu.deegaan.so/assets/images/meals/items/middle320/${item.photo320}` : '/images/dishes/default.jpg',
           badge: item.isVegetarian ? 'Vegetarian' : (item.isSpicy ? 'Spicy' : ''),
           sizes: item.active_sizes || [],
-          addons: item.active_addons || []
+          addons: item.active_addons || [],
+          notes: item.notes || []
         }))
       }
     } catch (error) {
       console.error('Error fetching menu items:', error)
     }
   }
+  
+  onMounted(async () => {
+    // Get data from offline store (already loaded by app initialization)
+    // Check if data is already cached, if so use it instead of fetching again
+    if (offlineStore.hasOfflineData) {
+      // Use cached data - instant, no API calls!
+      loadCachedData()
+    } else {
+      // Fetch if not cached yet (fallback)
+      await fetchCategories()
+      await fetchAllMenuItems()
+    }
+    // Apply initial filters after data is loaded
+    applyCurrentFilters()
+  })
 
   // Handle category click - now just filters locally instead of fetching
   const handleCategoryClick = (categoryId) => {
     activeCat.value = categoryId
+    // Clear filter categories when using top nav
+    categoryFilters.value = []
     applyCurrentFilters()
   }
   
@@ -154,14 +212,28 @@
   const applyCurrentFilters = () => {
     let filtered = [...allItems.value]
     
-    // Apply category filter
-    if (activeCat.value !== 'all') {
+    // Apply category filter from top navigation
+    if (activeCat.value !== 'all' && categoryFilters.value.length === 0) {
       filtered = filtered.filter(item => item.cat === activeCat.value)
+    }
+    
+    // Apply multiple category filters from filter sheet
+    if (categoryFilters.value.length > 0) {
+      filtered = filtered.filter(item => categoryFilters.value.includes(item.cat))
     }
     
     // Apply price filter if set
     if (priceFilter.value !== null) {
       filtered = filtered.filter(item => item.price <= priceFilter.value)
+    }
+    
+    // Apply search filter
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase()
+      filtered = filtered.filter(item => 
+        item.name.toLowerCase().includes(query) ||
+        item.desc.toLowerCase().includes(query)
+      )
     }
     
     items.value = filtered
@@ -171,6 +243,19 @@
     return items.value
   })
 
+  // Check if any filters are active
+  const hasActiveFilters = computed(() => {
+    return categoryFilters.value.length > 0 || searchQuery.value !== '' || (priceFilter.value !== null && priceFilter.value !== 20)
+  })
+
+  // Count active filters
+  const activeFilterCount = computed(() => {
+    let count = 0
+    if (categoryFilters.value.length > 0) count += categoryFilters.value.length
+    if (searchQuery.value !== '') count += 1
+    if (priceFilter.value !== null && priceFilter.value !== 20) count += 1
+    return count
+  })
 
   // Filter categories for FilterSheet (exclude 'all')
   const filterCategories = computed(() => {
@@ -186,11 +271,15 @@
     // Apply price filter
     priceFilter.value = filters.price || null
     
-    // Apply category filter
+    // Apply search filter
+    searchQuery.value = filters.search || ''
+    
+    // Apply multiple category filters
     if (filters.categories && filters.categories.length > 0) {
-      const selectedCategory = filters.categories[0] // Take first selected category
-      activeCat.value = selectedCategory.id
+      categoryFilters.value = filters.categories.map(c => c.id)
+      activeCat.value = 'all' // Reset top nav to "All" when using filter
     } else {
+      categoryFilters.value = []
       activeCat.value = 'all'
     }
     
@@ -199,6 +288,15 @@
     
     // Close the filter sheet
     showFilters.value = false
+  }
+  
+  // Reset all filters
+  const resetAllFilters = () => {
+    categoryFilters.value = []
+    priceFilter.value = null
+    searchQuery.value = ''
+    activeCat.value = 'all'
+    applyCurrentFilters()
   }
   
   function onAdd(it){
@@ -245,6 +343,29 @@
   background:#0e3a3a; color:#fff;
   font-family:'Poppins',sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:.5px; font-size:14px;
   box-shadow:0 2px 6px rgba(0,0,0,.12);
+  transition:background .2s ease;
+  position:relative;
+}
+.filterbtn:hover{
+  background:#0c3030;
+}
+.filterbtn.has-filters{
+  background:#1a7a45;
+  border-color:#1a7a45;
+}
+.filterbtn.has-filters:hover{
+  background:#146536;
+}
+.filter-badge{
+  background:#fff;
+  color:#1a7a45;
+  border-radius:999px;
+  padding:2px 7px;
+  font-size:11px;
+  font-weight:800;
+  line-height:1;
+  min-width:18px;
+  text-align:center;
 }
   .pill{
     flex:0 0 auto; display:inline-flex; align-items:center; gap:8px;
@@ -312,6 +433,58 @@
   background:#dc2626; color:#fff; border-radius:999px;
   padding:2px 7px; font-family:'Poppins',sans-serif; font-size:12px; font-weight:700;
   line-height:1;
+}
+
+/* Empty State */
+.empty-state{
+  grid-column:1 / -1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:60px 20px;
+  text-align:center;
+}
+.empty-icon{
+  font-size:64px;
+  margin-bottom:16px;
+  opacity:.5;
+}
+.empty-title{
+  margin:0 0 8px;
+  font-family:'Poppins',sans-serif;
+  font-size:22px;
+  font-weight:700;
+  color:#0e3a3a;
+}
+.empty-text{
+  margin:0 0 20px;
+  font-family:'Poppins',sans-serif;
+  font-size:14px;
+  font-weight:400;
+  color:#7a8c8c;
+  max-width:300px;
+}
+.reset-btn{
+  padding:12px 24px;
+  border-radius:999px;
+  border:none;
+  background:#1a7a45;
+  color:#fff;
+  font-family:'Poppins',sans-serif;
+  font-size:14px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  cursor:pointer;
+  box-shadow:0 4px 12px rgba(26,122,69,.3);
+  transition:background .2s ease, transform .06s ease;
+}
+.reset-btn:hover{
+  background:#146536;
+}
+.reset-btn:active{
+  transform:scale(.98);
 }
 
 

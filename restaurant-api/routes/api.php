@@ -40,12 +40,12 @@ Route::prefix('guest')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Menu API Routes (Public - No Auth Required)
+| Menu API Routes (JWT Auth Required)
 |--------------------------------------------------------------------------
 */
 
 // Meal Packages Routes
-Route::prefix('packages')->group(function () {
+Route::prefix('packages')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [MealPackageController::class, 'index']);
     Route::get('/with-items', [MealPackageController::class, 'indexWithItems']);
     Route::get('/{id}', [MealPackageController::class, 'show']);
@@ -53,7 +53,7 @@ Route::prefix('packages')->group(function () {
 });
 
 // Meal Items Routes
-Route::prefix('items')->group(function () {
+Route::prefix('items')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [MealItemController::class, 'index']);
     Route::get('/available', [MealItemController::class, 'available']);
     Route::get('/search', [MealItemController::class, 'search']);
@@ -63,30 +63,30 @@ Route::prefix('items')->group(function () {
 });
 
 // Addon Routes
-Route::prefix('addons')->group(function () {
+Route::prefix('addons')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [AddonController::class, 'index']);
     Route::get('/all', [AddonController::class, 'all']);
     Route::get('/search', [AddonController::class, 'search']);
     Route::get('/{id}', [AddonController::class, 'show']);
     Route::get('/meal-item/{itemId}', [AddonController::class, 'byMealItem']);
     
-    // Admin routes (you might want to add authentication middleware later)
+    // Admin routes with JWT auth
     Route::post('/', [AddonController::class, 'store']);
     Route::put('/{id}', [AddonController::class, 'update']);
     Route::delete('/{id}', [AddonController::class, 'destroy']);
 });
 
 // Quick Menu Route - Get everything in one call
-Route::get('/menu', [MealPackageController::class, 'indexWithItems']);
+Route::get('/menu', [MealPackageController::class, 'indexWithItems'])->middleware('auth:sanctum');
 
 /*
 |--------------------------------------------------------------------------
-| System Settings API Routes (Public - No Auth Required)
+| System Settings API Routes (JWT Auth Required)
 |--------------------------------------------------------------------------
 */
 
 // System Settings Routes
-Route::prefix('settings')->group(function () {
+Route::prefix('settings')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [SystemSettingsController::class, 'index']);
     Route::get('/app', [SystemSettingsController::class, 'getAppSettings']);
     Route::get('/vat', [SystemSettingsController::class, 'getVATPercentage']);
@@ -95,16 +95,21 @@ Route::prefix('settings')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Order API Routes (Public - No Auth Required)
+| Order API Routes (JWT Auth Required)
 |--------------------------------------------------------------------------
 */
 
 // Order Routes
 Route::prefix('orders')->group(function () {
-    Route::post('/', [OrderController::class, 'placeOrder']);
+    // Public routes for notification system (internal use only)
     Route::get('/latest', [OrderController::class, 'getLatestOrder']);
     Route::get('/newer/{orderID}', [OrderController::class, 'getNewerOrders']);
-    Route::get('/{orderID}', [OrderController::class, 'getOrder']);
-    Route::get('/table/{tableID}', [OrderController::class, 'getOrdersByTable']);
-    Route::put('/{orderID}/status', [OrderController::class, 'updateOrderStatus']);
+    
+    // Protected routes requiring authentication
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/', [OrderController::class, 'placeOrder']);
+        Route::get('/{orderID}', [OrderController::class, 'getOrder']);
+        Route::get('/table/{tableID}', [OrderController::class, 'getOrdersByTable']);
+        Route::put('/{orderID}/status', [OrderController::class, 'updateOrderStatus']);
+    });
 });

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { API_CONFIG, getApiUrl } from '../config/api.js'
 import { indexedDBStorage } from './indexedDB.js'
+import axios from 'axios'
 
 export const useOfflineStore = defineStore('offline', {
   state: () => ({
@@ -101,9 +102,9 @@ export const useOfflineStore = defineStore('offline', {
     async fetchWithOfflineFallback(url, type) {
       try {
         if (this.isOnline) {
-          const response = await fetch(url)
-          if (response.ok) {
-            const data = await response.json()
+          const response = await axios.get(url)
+          if (response.status === 200) {
+            const data = response.data
             this.cacheData(data.data || data, type)
             return data
           }

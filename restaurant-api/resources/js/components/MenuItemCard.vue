@@ -45,21 +45,23 @@
           <section class="section row">
             <h3>Quantity</h3>
             <div class="qty">
-              <button @click="qty > 1 && qty--">-</button>
-              <span>{{ qty }}</span>
+              <button @click="qty > 0 && qty--">-</button>
+              <span :class="{ 'qty-zero': qty === 0 }">{{ qty }}</span>
               <button @click="qty++">+</button>
             </div>
           </section>
+          
+          <!-- Remove warning when quantity is 0 -->
+          <div v-if="qty === 0 && cartItemIndex !== -1" class="remove-warning">
+            ⚠️ This item will be removed from your cart
+          </div>
 
           <!-- Customer Notes -->
           <section class="section">
-            <h3>Special Instructions</h3>
-            <textarea 
-              v-model="customerNotes" 
-              placeholder="Any special requests or dietary requirements..."
-              class="notes-input"
-              rows="3"
-            ></textarea>
+            <MealNotesInput 
+              :preset-notes="item.notes || []"
+              v-model="customerNotes"
+            />
           </section>
   
           <!-- Actions -->
@@ -73,8 +75,9 @@
   </template>
   
   <script setup>
-  import { ref, watch } from 'vue'
+  import { ref, watch, computed } from 'vue'
   import { useCart } from '../stores/cart'
+  import MealNotesInput from './MealNotesInput.vue'
   
   const props = defineProps({
     item: { type: Object, required: true }
@@ -85,35 +88,99 @@
   const selectedVariant = ref(null)
   const selectedAddOns = ref([])
   const customerNotes = ref('')
+  const cartItemIndex = ref(null)
+  
+  // Find existing cart item with same id and variant
+  const findCartItem = () => {
+    return cart.items.findIndex(i =>
+      i.id === props.item.id &&
+      selectedVariant.value?.sizeID === i.variant?.sizeID
+    )
+  }
   
   // Reset modal state when opening
   watch(showModal, (isOpen) => {
     if (isOpen) {
-      qty.value = 1
       selectedAddOns.value = []
       customerNotes.value = ''
       // Auto-select first size if available
       selectedVariant.value = props.item.sizes && props.item.sizes.length > 0 ? props.item.sizes[0] : null
+      
+      // Check if item already exists in cart
+      cartItemIndex.value = findCartItem()
+      if (cartItemIndex.value !== -1) {
+        // Item exists in cart, show current quantity
+        const existingItem = cart.items[cartItemIndex.value]
+        qty.value = existingItem.qty
+        customerNotes.value = existingItem.notes || ''
+        if (existingItem.addOns) {
+          selectedAddOns.value = [...existingItem.addOns]
+        }
+      } else {
+        // New item, start with quantity 1
+        qty.value = 1
+      }
+    }
+  })
+  
+  // Update cart item index when variant changes
+  watch(selectedVariant, () => {
+    if (showModal.value) {
+      cartItemIndex.value = findCartItem()
+      if (cartItemIndex.value !== -1) {
+        const existingItem = cart.items[cartItemIndex.value]
+        qty.value = existingItem.qty
+        customerNotes.value = existingItem.notes || ''
+        if (existingItem.addOns) {
+          selectedAddOns.value = [...existingItem.addOns]
+        }
+      } else {
+        qty.value = 1
+        customerNotes.value = ''
+        selectedAddOns.value = []
+      }
     }
   })
   
   function confirmAdd() {
-  const addOnsTotal = selectedAddOns.value.reduce((t, a) => t + Number(a.price), 0)
-  // Use size price if selected, otherwise use base item price
-  const basePrice = selectedVariant.value ? Number(selectedVariant.value.price) : props.item.price
-  
-  cart.add({
-    id: props.item.id,
-    name: props.item.name,
-    image: props.item.image,  
-    price: basePrice + addOnsTotal,
-    variant: selectedVariant.value,
-    addOns: selectedAddOns.value,
-    qty: qty.value,
-    notes: customerNotes.value
-  })
-  showModal.value = false
-}
+    const addOnsTotal = selectedAddOns.value.reduce((t, a) => t + Number(a.price), 0)
+    // Use size price if selected, otherwise use base item price
+    const basePrice = selectedVariant.value ? Number(selectedVariant.value.price) : props.item.price
+    
+    // If quantity is 0, remove from cart
+    if (qty.value === 0) {
+      if (cartItemIndex.value !== -1) {
+        cart.remove(cartItemIndex.value)
+      }
+      showModal.value = false
+      return
+    }
+    
+    // If item exists in cart, update it
+    if (cartItemIndex.value !== -1) {
+      const existingItem = cart.items[cartItemIndex.value]
+      existingItem.qty = qty.value
+      existingItem.price = basePrice + addOnsTotal
+      existingItem.addOns = selectedAddOns.value
+      existingItem.notes = customerNotes.value
+      existingItem.presetNotes = props.item.notes || [] // Update preset notes
+      cart.saveToStorage()
+    } else {
+      // Add new item to cart
+      cart.add({
+        id: props.item.id,
+        name: props.item.name,
+        image: props.item.image,  
+        price: basePrice + addOnsTotal,
+        variant: selectedVariant.value,
+        addOns: selectedAddOns.value,
+        qty: qty.value,
+        notes: customerNotes.value,
+        presetNotes: props.item.notes || [] // Store preset notes for editing in cart
+      })
+    }
+    showModal.value = false
+  }
   </script>
   
   <style scoped>
@@ -154,8 +221,19 @@
   .qty button{width:40px;height:40px;border-radius:50%;border:none;background:#eee;font-family:'Poppins',sans-serif;font-weight:700;font-size:18px;cursor:pointer;transition:background .2s ease}
   .qty button:hover{background:#ddd}
   .qty button:active{transform:scale(.95)}
-  .notes-input{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-family:'Poppins',sans-serif;font-size:14px;font-weight:400;resize:vertical;min-height:60px}
-  .notes-input:focus{outline:none;border-color:#0e3a3a;box-shadow:0 0 0 2px rgba(14,58,58,.1)}
+  .qty-zero{color:#dc2626;font-weight:800}
+  .remove-warning{
+    margin:8px 0 0;
+    padding:8px 12px;
+    background:#fef2f2;
+    border:1px solid #fecaca;
+    border-radius:8px;
+    color:#dc2626;
+    font-family:'Poppins',sans-serif;
+    font-size:13px;
+    font-weight:500;
+    text-align:center;
+  }
   .actions{display:flex;justify-content:space-between;margin-top:20px;gap:10px}
   .cancel,.confirm{flex:1;padding:12px;border-radius:999px;font-family:'Poppins',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.5px;border:none;cursor:pointer}
   .cancel{background:#eee;color:#444}

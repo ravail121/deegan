@@ -83,12 +83,15 @@
         class OrderNotificationSystem {
             constructor() {
                 this.apiUrl = '/api/orders'; // Adjust this URL as needed
-                this.checkInterval = 10000; // 10 seconds
+                this.checkInterval = 10000; // 10 seconds (configurable)
                 this.lastOrderId = null;
                 this.isRunning = false;
                 this.intervalId = null;
                 this.audioContext = null;
                 this.audioInitialized = false;
+                this.consecutiveErrors = 0; // Track consecutive errors
+                this.lastErrorType = null; // Track error type
+                this.maxConsecutiveErrors = 3; // Alert after 3 consecutive errors
                 
                 // Initialize the system
                 this.init();
@@ -100,6 +103,9 @@
             init() {
                 console.log('🔔 Order Notification System initialized');
                 
+                // Request notification permission
+                this.requestNotificationPermission();
+                
                 // Add click handler to initialize audio on first user interaction
                 this.addAudioInitHandler();
                 
@@ -109,6 +115,19 @@
                 }).catch(error => {
                     console.error('❌ Failed to initialize notification system:', error);
                 });
+            }
+            
+            /**
+             * Request notification permission
+             */
+            requestNotificationPermission() {
+                if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            console.log('✅ Desktop notifications enabled');
+                        }
+                    });
+                }
             }
 
             /**
@@ -140,11 +159,9 @@
                     const response = await this.makeApiCall('GET', this.apiUrl + '/latest');
                     if (response.success && response.data) {
                         this.lastOrderId = response.data.orderID;
-                        console.log(`📋 Baseline order ID set to: ${this.lastOrderId}`);
                     } else {
                         // If no orders exist, start from 0
                         this.lastOrderId = 0;
-                        console.log('📋 No existing orders found, starting from 0');
                     }
                 } catch (error) {
                     console.error('❌ Error getting last order ID:', error);
@@ -157,17 +174,16 @@
              */
             startMonitoring() {
                 if (this.isRunning) {
-                    console.log('⚠️ Monitoring is already running');
                     return;
                 }
 
                 this.isRunning = true;
-                console.log('🚀 Starting order monitoring...');
+                console.log('🚀 Order monitoring started');
                 
                 // Check immediately
                 this.checkForNewOrders();
                 
-                // Then check every 10 seconds
+                // Then check at specified interval
                 this.intervalId = setInterval(() => {
                     this.checkForNewOrders();
                 }, this.checkInterval);
@@ -178,7 +194,6 @@
              */
             stopMonitoring() {
                 if (!this.isRunning) {
-                    console.log('⚠️ Monitoring is not running');
                     return;
                 }
 
@@ -195,13 +210,15 @@
              */
             async checkForNewOrders() {
                 try {
-                    console.log('🔍 Checking for new orders...');
-                    
                     // Get orders newer than our last known order
                     const response = await this.makeApiCall('GET', `${this.apiUrl}/newer/${this.lastOrderId}`);
                     
                     if (response.success && response.data && response.data.length > 0) {
-                        console.log(`🎉 Found ${response.data.length} new order(s)!`);
+                        console.log(`🎉 NEW ORDERS DETECTED! Found ${response.data.length} new order(s)!`);
+                        
+                        // Reset error counter on success
+                        this.consecutiveErrors = 0;
+                        this.lastErrorType = null;
                         
                         // Process each new order
                         for (const order of response.data) {
@@ -213,11 +230,51 @@
                         this.lastOrderId = newestOrder.orderID;
                         
                     } else {
-                        console.log('📭 No new orders found');
+                        // No new orders found - this is a success state, not an error
+                        // Silent - no logging needed for successful "no new orders" check
+                        
+                        // Reset error counter on successful check (even with no new orders)
+                        this.consecutiveErrors = 0;
+                        this.lastErrorType = null;
                     }
                     
                 } catch (error) {
-                    console.error('❌ Error checking for new orders:', error);
+                    this.handleApiError(error);
+                }
+            }
+            
+            /**
+             * Handle API errors with better feedback
+             */
+            handleApiError(error) {
+                this.consecutiveErrors++;
+                
+                // Check for authentication error (401)
+                if (error.message && error.message.includes('401')) {
+                    if (this.lastErrorType !== 'auth') {
+                        console.error('⚠️ Authentication Error: The notification system needs proper API access');
+                        console.error('ℹ️ Please ensure the order API endpoints are accessible');
+                        this.lastErrorType = 'auth';
+                    }
+                }
+                // Check for network/connection errors
+                else if (error.message && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError'))) {
+                    if (this.lastErrorType !== 'network') {
+                        console.error('⚠️ Network Error: Cannot connect to the server');
+                        console.error('ℹ️ Please check your internet connection and server status');
+                        this.lastErrorType = 'network';
+                    }
+                }
+                // Other errors
+                else {
+                    if (this.consecutiveErrors === 1) {
+                        console.error('❌ Error checking for new orders:', error.message || error);
+                    }
+                }
+                
+                // Alert if too many consecutive errors
+                if (this.consecutiveErrors === this.maxConsecutiveErrors) {
+                    console.error(`🚨 ALERT: ${this.consecutiveErrors} consecutive errors detected! System may not be working properly.`);
                 }
             }
 
@@ -227,6 +284,30 @@
             handleNewOrder(order) {
                 // Play notification sound
                 this.playNotificationSound();
+                
+                // Show desktop notification
+                this.showDesktopNotification(order);
+            }
+            
+            /**
+             * Show desktop notification
+             */
+            showDesktopNotification(order) {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    const notification = new Notification('🔔 New Order Received!', {
+                        body: `Order #${order.orderID}\nTable: ${order.tableName}\nAmount: $${parseFloat(order.orderAmount).toFixed(2)}`,
+                        icon: '/logo.png',
+                        badge: '/icon-192.png',
+                        tag: `order-${order.orderID}`,
+                        requireInteraction: true,
+                        vibrate: [200, 100, 200]
+                    });
+                    
+                    notification.onclick = () => {
+                        window.focus();
+                        notification.close();
+                    };
+                }
             }
 
             /**
@@ -265,18 +346,15 @@
                     oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
                     oscillator.type = 'sine';
                     
-                    // Set volume
-                    gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                    // Set volume (increased from 0.3 to 0.8)
+                    gainNode.gain.setValueAtTime(0.8, this.audioContext.currentTime);
                     gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
                     
                     // Play the beep
                     oscillator.start(this.audioContext.currentTime);
                     oscillator.stop(this.audioContext.currentTime + 0.3);
                     
-                    console.log('🔊 Web Audio beep played');
-                    
                 } catch (error) {
-                    console.error('❌ Web Audio beep failed:', error);
                     this.playHTML5Beep();
                 }
             }
@@ -288,7 +366,6 @@
                 try {
                     // Check if audio is allowed (user has interacted)
                     if (!this.audioInitialized) {
-                        console.log('🔇 Audio not initialized - user interaction required');
                         this.playSystemBeep();
                         return;
                     }
@@ -297,17 +374,13 @@
                     const beepData = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT';
                     
                     const audio = new Audio(beepData);
-                    audio.volume = 0.7;
-                    audio.play().then(() => {
-                        console.log('🔊 HTML5 beep played');
-                    }).catch((error) => {
-                        console.error('❌ HTML5 beep failed:', error);
+                    audio.volume = 1.0; // Increased from 0.7 to 1.0 (maximum)
+                    audio.play().catch(() => {
                         // Try alternative beep method
                         this.playAlternativeBeep();
                     });
                     
                 } catch (error) {
-                    console.error('❌ HTML5 beep creation failed:', error);
                     this.playAlternativeBeep();
                 }
             }
@@ -335,18 +408,15 @@
                     oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
                     oscillator.type = 'sine';
                     
-                    // Set volume
-                    gainNode.gain.setValueAtTime(0.5, this.audioContext.currentTime);
+                    // Set volume (increased from 0.5 to 0.9)
+                    gainNode.gain.setValueAtTime(0.9, this.audioContext.currentTime);
                     gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.4);
                     
                     // Play the beep
                     oscillator.start(this.audioContext.currentTime);
                     oscillator.stop(this.audioContext.currentTime + 0.4);
                     
-                    console.log('🔊 Alternative beep played');
-                    
                 } catch (error) {
-                    console.error('❌ Alternative beep failed:', error);
                     this.playSystemBeep();
                 }
             }
@@ -357,9 +427,8 @@
             playSystemBeep() {
                 try {
                     console.log('\x07'); // ASCII bell character
-                    console.log('🔔 System beep attempted');
                 } catch (error) {
-                    console.log('🔇 No audio support available');
+                    // Silent fallback
                 }
             }
 
@@ -443,10 +512,13 @@
              */
             updateConfig(config) {
                 if (config.checkInterval) {
+                    const oldInterval = this.checkInterval;
                     this.checkInterval = config.checkInterval;
+                    console.log(`⚙️ Check interval updated from ${oldInterval/1000}s to ${this.checkInterval/1000}s`);
                 }
                 if (config.apiUrl) {
                     this.apiUrl = config.apiUrl;
+                    console.log(`⚙️ API URL updated to: ${this.apiUrl}`);
                 }
                 
                 // Restart monitoring if it's running
@@ -454,6 +526,21 @@
                     this.stopMonitoring();
                     this.startMonitoring();
                 }
+            }
+            
+            /**
+             * Set check interval in seconds
+             */
+            setCheckInterval(seconds) {
+                if (seconds < 5) {
+                    console.error('⚠️ Minimum check interval is 5 seconds');
+                    return;
+                }
+                if (seconds > 300) {
+                    console.error('⚠️ Maximum check interval is 300 seconds (5 minutes)');
+                    return;
+                }
+                this.updateConfig({ checkInterval: seconds * 1000 });
             }
         }
 
@@ -635,15 +722,6 @@
         document.addEventListener('keydown', initializeAudioOnInteraction);
         document.addEventListener('touchstart', initializeAudioOnInteraction);
 
-        // Console commands for testing
-        console.log(`
-🔔 Order Notification System Loaded!
-
-Available commands:
-- testSound()  // Test sound
-- playBeep()   // Play simple beep
-- orderNotificationSystem.getStatus() // Get system status
-`);
     </script>
 </body>
 </html>

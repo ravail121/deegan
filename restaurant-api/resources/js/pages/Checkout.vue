@@ -35,7 +35,20 @@
     <ul class="meta">
       <li v-if="it.variant">Size: {{ it.variant.sizeName }} (${{ Number(it.variant.price).toFixed(2) }})</li>
       <li v-for="a in it.addOns || []" :key="a.id">+ {{ a.name }}</li>
-      <li v-if="it.notes" class="notes">Note: {{ it.notes }}</li>
+      <li v-if="it.notes" class="notes">
+        Note: {{ it.notes }}
+        <button class="edit-note-btn" @click="openEditNotes(idx)" aria-label="Edit notes">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
+      </li>
+      <li v-else class="add-note">
+        <button class="add-note-btn" @click="openEditNotes(idx)">
+          ➕ Add note
+        </button>
+      </li>
     </ul>
 
     <!-- Trash at bottom right -->
@@ -130,15 +143,42 @@
           </div>
         </div>
       </div>
+
+      <!-- Edit Notes Modal -->
+      <div v-if="editingNotesIdx !== null" class="overlay" @click.self="closeEditNotes">
+        <div class="edit-notes-modal">
+          <div class="modal-header">
+            <h3 class="modal-title">Edit Notes</h3>
+            <button class="close-btn" @click="closeEditNotes" aria-label="Close">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          
+          <p class="modal-subtitle">{{ editingItem?.name }}</p>
+          
+          <MealNotesInput 
+            :preset-notes="editingItem?.presetNotes || []"
+            v-model="tempNotes"
+          />
+          
+          <div class="modal-actions">
+            <button class="cancel" @click="closeEditNotes">Cancel</button>
+            <button class="confirm" @click="saveNotes">Save Notes</button>
+          </div>
+        </div>
+      </div>
     </div>
   </template>
   
   <script setup>
-  import { ref, onMounted } from 'vue'
+  import { ref, onMounted, computed } from 'vue'
   import { useRouter } from 'vue-router'
   import { useCart } from '../stores/cart'
   import { useSettingsStore } from '../stores/settingsStore.js'
   import { useTableStore } from '../stores/tableStore.js'
+  import MealNotesInput from '../components/MealNotesInput.vue'
   import axios from 'axios'
   
   const router = useRouter()
@@ -149,6 +189,17 @@
   const isPlacingOrder = ref(false)
   const showSuccessModal = ref(false)
   const orderSuccessData = ref(null)
+  
+  // Notes editing
+  const editingNotesIdx = ref(null)
+  const tempNotes = ref('')
+  
+  const editingItem = computed(() => {
+    if (editingNotesIdx.value !== null) {
+      return cart.items[editingNotesIdx.value]
+    }
+    return null
+  })
 
   // Initialize settings on component mount
   onMounted(async () => {
@@ -167,6 +218,24 @@
   function backToMenu() {
     showSuccessModal.value = false
     router.push('/')
+  }
+  
+  // Notes editing functions
+  function openEditNotes(idx) {
+    editingNotesIdx.value = idx
+    tempNotes.value = cart.items[idx].notes || ''
+  }
+  
+  function closeEditNotes() {
+    editingNotesIdx.value = null
+    tempNotes.value = ''
+  }
+  
+  function saveNotes() {
+    if (editingNotesIdx.value !== null) {
+      cart.updateNotes(editingNotesIdx.value, tempNotes.value)
+      closeEditNotes()
+    }
   }
 
   async function placeOrder() {
@@ -270,7 +339,29 @@
 .qtybox button:disabled{opacity:.45;cursor:not-allowed}
   .meta{list-style:none;margin:6px 0 0;padding:0;color:#3a5656;font-family:'Poppins',sans-serif; font-size:13px;font-weight:400;padding-right:50px}
   .meta li{margin:2px 0}
-  .meta li.notes{color:#0e3a3a;font-style:italic;background:#f0f2ef;padding:4px 8px;border-radius:6px;margin-top:4px}
+  .meta li.notes{color:#0e3a3a;font-style:italic;background:#f0f2ef;padding:4px 8px;border-radius:6px;margin-top:4px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .meta li.add-note{margin-top:4px}
+  
+  .edit-note-btn{
+    appearance:none;border:none;background:transparent;
+    color:#1a7a45;padding:4px;border-radius:4px;
+    cursor:pointer;transition:background .15s ease;
+    display:inline-flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .edit-note-btn:hover{background:rgba(26,122,69,.1)}
+  .edit-note-btn:active{transform:scale(.95)}
+  
+  .add-note-btn{
+    appearance:none;border:none;
+    background:#e6f2ea;color:#1a7a45;
+    padding:6px 12px;border-radius:6px;
+    font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;
+    cursor:pointer;transition:background .15s ease;
+    display:inline-flex;align-items:center;gap:4px;
+  }
+  .add-note-btn:hover{background:#d5e8de}
+  .add-note-btn:active{transform:scale(.98)}
   
   .line{
   position:relative;
@@ -499,6 +590,108 @@
     100% {
       transform: scale(1);
     }
+  }
+
+  /* Edit Notes Modal */
+  .edit-notes-modal {
+    background: #fff;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    animation: fadeIn 0.2s ease;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  
+  .modal-title {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0e3a3a;
+  }
+  
+  .modal-subtitle {
+    margin: 0 0 16px 0;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #64706e;
+  }
+  
+  .close-btn {
+    appearance: none;
+    border: none;
+    background: #f0f0f0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    color: #0e3a3a;
+  }
+  
+  .close-btn:hover {
+    background: #e0e0e0;
+  }
+  
+  .close-btn:active {
+    transform: scale(0.95);
+  }
+  
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  .modal-actions .cancel,
+  .modal-actions .confirm {
+    flex: 1;
+    padding: 12px;
+    border-radius: 999px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  
+  .modal-actions .cancel {
+    background: #eef2f2;
+    color: #0e3a3a;
+  }
+  
+  .modal-actions .cancel:hover {
+    background: #dde5e5;
+  }
+  
+  .modal-actions .confirm {
+    background: #0e3a3a;
+    color: #fff;
+  }
+  
+  .modal-actions .confirm:hover {
+    background: #0c3030;
+  }
+  
+  .modal-actions .confirm:active,
+  .modal-actions .cancel:active {
+    transform: scale(0.98);
   }
 
   </style>

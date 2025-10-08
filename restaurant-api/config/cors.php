@@ -19,7 +19,16 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => [
+        'http://localhost:8000',
+        'https://localhost:8000',
+        'http://127.0.0.1:8000',
+        'https://127.0.0.1:8000',
+        'http://deegaanmenu.so',
+        'https://deegaanmenu.so',
+        'http://www.deegaanmenu.so',
+        'https://www.deegaanmenu.so',
+    ],
 
     'allowed_origins_patterns' => [],
 

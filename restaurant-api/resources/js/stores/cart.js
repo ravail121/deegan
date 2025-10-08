@@ -66,6 +66,13 @@ export const useCart = defineStore('cart', {
       this.saveToStorage()
     },
     
+    updateNotes(idx, notes) {
+      if (this.items[idx]) {
+        this.items[idx].notes = notes
+        this.saveToStorage()
+      }
+    },
+    
     clearCart(){
       this.items = []
       this.saveToStorage()

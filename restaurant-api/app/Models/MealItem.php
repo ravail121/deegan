@@ -81,6 +81,14 @@ class MealItem extends Model
     }
 
     /**
+     * Get preset notes for this meal item.
+     */
+    public function notes()
+    {
+        return $this->hasMany(MealNote::class, 'mealID', 'itemID');
+    }
+
+    /**
      * Scope to get only active items.
      */
     public function scopeActive($query)

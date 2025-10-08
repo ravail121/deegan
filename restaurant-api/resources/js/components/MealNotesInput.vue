@@ -1,6 +1,6 @@
 <template>
   <div class="meal-notes-wrapper">
-    <label class="notes-label">Add note (e.g., No Onion, Less Salt…)</label>
+    <label class="notes-label">{{ t('MealNotes.label') }}</label>
     
     <!-- Selected Notes as Chips -->
     <div v-if="selectedNotes.length > 0" class="chips-container">
@@ -24,7 +24,7 @@
         v-model="inputText"
         type="text"
         class="notes-input"
-        placeholder="Type to search or add a note..."
+        :placeholder="t('MealNotes.placeholder')"
         @focus="handleFocus"
         @blur="handleBlur"
         @input="handleInput"
@@ -59,7 +59,7 @@
           @mousedown.prevent="addNewNote"
           @mouseenter="highlightedIndex = filteredSuggestions.length"
         >
-          <span class="add-icon">➕</span> Add "{{ trimmedInputText }}"
+          {{ t('MealNotes.addNewPrefix') }}{{ trimmedInputText }}{{ t('MealNotes.addNewSuffix') }}
         </button>
       </div>
     </div>
@@ -68,6 +68,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { t } from '../config/appText.js'
 
 const props = defineProps({
   presetNotes: {

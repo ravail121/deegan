@@ -1,8 +1,8 @@
 <template>
   <div v-if="!isOnline && showBanner" class="offline-indicator">
     <div class="offline-banner">
-      <span class="offline-icon">📡</span>
-      <span class="offline-text">You're offline - showing cached data</span>
+      <span class="offline-icon">{{ t('Offline.icon') }}</span>
+      <span class="offline-text">{{ t('Offline.message') }}</span>
     </div>
   </div>
 </template>
@@ -10,6 +10,7 @@
 <script>
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useOfflineStore } from '../stores/offlineStore.js'
+import { t } from '../config/appText.js'
 
 export default {
   name: 'OfflineIndicator',
@@ -54,7 +55,8 @@ export default {
     
     return {
       isOnline: offlineStore.isOnline,
-      showBanner
+      showBanner,
+      t
     }
   }
 }

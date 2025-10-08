@@ -2,11 +2,12 @@
   <div id="app">
     <OfflineIndicator />
     <TableIndicator />
+    <PWAInstallPrompt />
     <router-view v-if="isInitialized" />
     <div v-else class="loading-screen">
       <div class="loading-content">
         <img src="/logo.png" alt="Deegaan Restaurant" class="loading-logo" />
-        <h2>Loading...</h2>
+        <h2>{{ t('Loading.text') }}</h2>
       </div>
     </div>
   </div>
@@ -21,12 +22,15 @@ import { useCart } from './stores/cart.js'
 import { useGuestSession } from './stores/guestSession.js'
 import OfflineIndicator from './components/OfflineIndicator.vue'
 import TableIndicator from './components/TableIndicator.vue'
+import PWAInstallPrompt from './components/PWAInstallPrompt.vue'
+import { t } from './config/appText.js'
 
 export default {
   name: 'App',
   components: {
     OfflineIndicator,
-    TableIndicator
+    TableIndicator,
+    PWAInstallPrompt
   },
   setup() {
     const offlineStore = useOfflineStore()
@@ -82,7 +86,8 @@ export default {
     })
 
     return {
-      isInitialized
+      isInitialized,
+      t
     }
   }
 }

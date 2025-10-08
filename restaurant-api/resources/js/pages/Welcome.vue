@@ -9,9 +9,9 @@
         <img src="/logo.png" alt="Deegaan Restaurant" class="logo" />
   
         <!-- Titles -->
-        <h1 class="welcome">WELCOME TO</h1>
-        <h2 class="brand">DEEGAAN RESTAURANT</h2>
-        <p class="subtitle">Authentic Somali &amp; Indian Cuisine</p>
+        <h1 class="welcome">{{ t('Welcome.greeting') }}</h1>
+        <h2 class="brand">{{ t('Welcome.brandName') }}</h2>
+        <p class="subtitle">{{ t('Welcome.subtitle') }}</p>
   
         <!-- Dots -->
         <div class="dots">
@@ -20,7 +20,7 @@
   
         <!-- Button -->
         <button class="btn" @click="$router.push('/menu')">
-            CONTINUE <span class="arrow">➜</span>
+            {{ t('Welcome.continueButton') }} <span class="arrow">{{ t('Welcome.continueButtonIcon') }}</span>
       </button>
 
       </main>
@@ -28,7 +28,7 @@
   </template>
   
   <script setup>
-  // no logic yet, just UI
+  import { t } from '../config/appText.js'
   </script>
   
   <style scoped>

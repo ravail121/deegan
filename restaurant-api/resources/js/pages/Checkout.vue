@@ -2,7 +2,7 @@
     <div class="wrap">
       <!-- Top Bar -->
       <header class="topbar">
-        <button class="iconbtn" @click="$router.back()" aria-label="Back">
+        <button class="iconbtn" @click="$router.back()" :aria-label="t('Checkout.backButton')">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -10,33 +10,33 @@
   
         <div class="brand">
           <img src="/logo.png" alt="" class="logo">
-          <span>Deegaan Restaurant</span>
+          <span>{{ t('Checkout.brandName') }}</span>
         </div>
   
         <span class="spacer" />
       </header>
   
-      <h1 class="title">CHECKOUT</h1>
+      <h1 class="title">{{ t('Checkout.title') }}</h1>
   
       <!-- Items -->
       <main class="list" v-if="cart.items.length">
         <article v-for="(it, idx) in cart.items" :key="idx" class="line">
   <img :src="it.image || '/images/dishes/fish.jpg'" class="thumb" :alt="it.name" />
   <div class="info">
-    <div class="top">
+      <div class="top">
       <h3 class="name">{{ it.name }}</h3>
       <div class="qtybox">
         <button :disabled="it.qty===1" @click="cart.dec(idx)">−</button>
-        <span>x{{ it.qty }}</span>
+        <span>{{ t('Checkout.quantityPrefix') }}{{ it.qty }}</span>
         <button @click="cart.inc(idx)">+</button>
       </div>
     </div>
 
     <ul class="meta">
-      <li v-if="it.variant">Size: {{ it.variant.sizeName }} (${{ Number(it.variant.price).toFixed(2) }})</li>
-      <li v-for="a in it.addOns || []" :key="a.id">+ {{ a.name }}</li>
+      <li v-if="it.variant">{{ t('Checkout.sizePrefix') }}{{ it.variant.sizeName }} (${{ Number(it.variant.price).toFixed(2) }})</li>
+      <li v-for="a in it.addOns || []" :key="a.id">{{ t('Checkout.addonPrefix') }}{{ a.name }}</li>
       <li v-if="it.notes" class="notes">
-        Note: {{ it.notes }}
+        {{ t('Checkout.notePrefix') }}{{ it.notes }}
         <button class="edit-note-btn" @click="openEditNotes(idx)" aria-label="Edit notes">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -46,7 +46,7 @@
       </li>
       <li v-else class="add-note">
         <button class="add-note-btn" @click="openEditNotes(idx)">
-          ➕ Add note
+          {{ t('Checkout.addNoteButton') }}
         </button>
       </li>
     </ul>
@@ -65,11 +65,11 @@
       </main>
   
       <!-- Empty state -->
-      <p v-else class="empty">Your cart is empty.</p>
+      <p v-else class="empty">{{ t('Checkout.emptyCartText') }}</p>
 
       <section v-if="cart.items.length" class="summary">
   <div class="row">
-    <span>Subtotal:</span>
+    <span>{{ t('Checkout.subtotalLabel') }}</span>
     <strong>${{ cart.total.toFixed(2) }}</strong>
   </div>
   
@@ -81,12 +81,12 @@
   
   <!-- Tax Row - Fallback for when VAT is 0 or not loaded -->
   <div class="row" v-else>
-    <span>Tax:</span>
+    <span>{{ t('Checkout.taxLabel') }}</span>
     <strong>$0.00</strong>
   </div>
   
   <div class="row total">
-    <span>Total:</span>
+    <span>{{ t('Checkout.totalLabel') }}</span>
     <strong>${{ settingsStore.calculateTotalWithVAT(cart.total).toFixed(2) }}</strong>
   </div>
   
@@ -100,10 +100,10 @@
     <div>Settings loaded: {{ settingsStore.lastFetched ? 'Yes' : 'No' }}</div>
   </div> -->
   
-  <p class="delivery">Estimated delivery: 25–30 min</p>
+  <p class="delivery">{{ t('Checkout.deliveryEstimate') }}</p>
 
   <button class="orderbtn" @click="placeOrder" :disabled="isPlacingOrder">
-    {{ isPlacingOrder ? 'PLACING ORDER...' : 'PLACE ORDER' }}
+    {{ isPlacingOrder ? t('Checkout.placingOrderButton') : t('Checkout.placeOrderButton') }}
   </button>
 </section>
   
@@ -111,8 +111,8 @@
       <div v-if="isPlacingOrder" class="order-loader-overlay">
         <div class="order-loader">
           <div class="loader-spinner"></div>
-          <h3>Placing Your Order...</h3>
-          <p>Please wait while we process your order and create all necessary records.</p>
+          <h3>{{ t('Checkout.placingTitle') }}</h3>
+          <p>{{ t('Checkout.placingMessage') }}</p>
         </div>
       </div>
 
@@ -125,21 +125,21 @@
               <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
-          <h3>Order Placed Successfully!</h3>
-          <p v-if="orderSuccessData">Order ID: {{ orderSuccessData.orderID }}</p>
-          <p>Your order has been received and is being prepared.</p>
-          <button class="back-to-menu-btn" @click="backToMenu">Back to Menu</button>
+          <h3>{{ t('Checkout.successTitle') }}</h3>
+          <p v-if="orderSuccessData">{{ t('Checkout.successOrderIdPrefix') }}{{ orderSuccessData.orderID }}</p>
+          <p>{{ t('Checkout.successMessage') }}</p>
+          <button class="back-to-menu-btn" @click="backToMenu">{{ t('Checkout.backToMenuButton') }}</button>
         </div>
       </div>
 
       <!-- Confirm delete modal -->
       <div v-if="confirmIdx !== null" class="overlay" @click.self="confirmIdx=null">
         <div class="modal">
-          <h3 class="confirm-title">Remove this item?</h3>
-          <p class="confirm-text">Are you sure you want to remove it from your cart?</p>
+          <h3 class="confirm-title">{{ t('Checkout.deleteTitle') }}</h3>
+          <p class="confirm-text">{{ t('Checkout.deleteMessage') }}</p>
           <div class="actions">
-            <button class="cancel" @click="confirmIdx=null">Cancel</button>
-            <button class="danger" @click="doDelete">Delete</button>
+            <button class="cancel" @click="confirmIdx=null">{{ t('Checkout.deleteCancelButton') }}</button>
+            <button class="danger" @click="doDelete">{{ t('Checkout.deleteConfirmButton') }}</button>
           </div>
         </div>
       </div>
@@ -148,7 +148,7 @@
       <div v-if="editingNotesIdx !== null" class="overlay" @click.self="closeEditNotes">
         <div class="edit-notes-modal">
           <div class="modal-header">
-            <h3 class="modal-title">Edit Notes</h3>
+            <h3 class="modal-title">{{ t('Checkout.editNotesTitle') }}</h3>
             <button class="close-btn" @click="closeEditNotes" aria-label="Close">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 6L6 18M6 6l12 12"/>
@@ -164,8 +164,8 @@
           />
           
           <div class="modal-actions">
-            <button class="cancel" @click="closeEditNotes">Cancel</button>
-            <button class="confirm" @click="saveNotes">Save Notes</button>
+            <button class="cancel" @click="closeEditNotes">{{ t('Checkout.editNotesCancelButton') }}</button>
+            <button class="confirm" @click="saveNotes">{{ t('Checkout.editNotesSaveButton') }}</button>
           </div>
         </div>
       </div>
@@ -179,6 +179,7 @@
   import { useSettingsStore } from '../stores/settingsStore.js'
   import { useTableStore } from '../stores/tableStore.js'
   import MealNotesInput from '../components/MealNotesInput.vue'
+  import { t } from '../config/appText.js'
   import axios from 'axios'
   
   const router = useRouter()
@@ -240,12 +241,12 @@
 
   async function placeOrder() {
     if (!tableStore.hasTableData) {
-      alert('Please scan a table QR code first')
+      alert(t('Alerts.scanTableFirst'))
       return
     }
 
     if (cart.items.length === 0) {
-      alert('Your cart is empty')
+      alert(t('Alerts.cartEmpty'))
       return
     }
 
@@ -283,7 +284,7 @@
 
     } catch (error) {
       console.error('Order placement failed:', error)
-      alert(`Failed to place order: ${error.response?.data?.message || error.message}`)
+      alert(`${t('Alerts.orderFailed')}${error.response?.data?.message || error.message}`)
     } finally {
       isPlacingOrder.value = false
     }

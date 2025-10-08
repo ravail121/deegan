@@ -1,0 +1,171 @@
+================================================================
+DEEGAAN RESTAURANT - TEXT REFACTORING SUMMARY
+================================================================
+
+✅ COMPLETED: All user-facing UI text has been moved to a centralized configuration file.
+
+----------------------------------------------------------------
+CONFIGURATION FILE LOCATION:
+----------------------------------------------------------------
+📁 restaurant-api/resources/js/config/appText.js
+
+This is the ONLY file staff need to edit to change any text in the app.
+
+----------------------------------------------------------------
+HOW TO EDIT TEXT:
+----------------------------------------------------------------
+1. Open: resources/js/config/appText.js
+2. Find the section (e.g., Welcome, Menu, Checkout)
+3. Change the text after the colon
+4. Save the file
+5. Rebuild: npm run build
+
+Example:
+  OLD: greeting: 'WELCOME TO',
+  NEW: greeting: 'HELLO AND WELCOME',
+
+----------------------------------------------------------------
+COMPONENTS UPDATED (ALL UI TEXT REPLACED):
+----------------------------------------------------------------
+✅ Welcome.vue - Welcome screen
+✅ Menu.vue - Menu listing page
+✅ MenuItemCard.vue - Menu item modal
+✅ MealNotesInput.vue - Notes autocomplete
+✅ FilterSheet.vue - Filter options
+✅ Checkout.vue - Cart and checkout
+✅ OfflineIndicator.vue - Offline banner
+✅ TableIndicator.vue - Table info banner
+✅ PWAInstallPrompt.vue - Install app banner
+✅ App.vue - Loading screen
+
+----------------------------------------------------------------
+TEXT CATEGORIES IN appText.js:
+----------------------------------------------------------------
+• Welcome - Welcome screen text
+• Menu - Menu page and navigation
+• MenuItem - Menu item modals and buttons
+• MealNotes - Notes input and suggestions
+• Filters - Filter sheet options
+• Checkout - Cart, checkout, and order placement
+• PWAInstall - App install prompts
+• Offline - Offline mode indicator
+• Table - Table indicator
+• Loading - Loading screen
+• Alerts - Alert messages
+• Common - Shared text (currency symbols, etc.)
+
+----------------------------------------------------------------
+TEXTS THAT COULD NOT BE REPLACED (Review These):
+----------------------------------------------------------------
+
+1. DYNAMIC DATA FROM API:
+   - Item names (e.g., "Grilled Chicken", "Pasta")
+   - Category names (e.g., "Appetizers", "Main Course")
+   - Addon names (e.g., "Extra Sauce", "Extra Cheese")
+   - Size names (e.g., "Small", "Large", "Regular")
+   → These come from database, not hardcoded
+
+2. CALCULATED/DYNAMIC TEXT:
+   - Prices (e.g., "$12.50", "$15.00")
+   - Quantities (e.g., "x2", "x3")
+   - Order IDs (e.g., "#12345")
+   - Table names from QR codes
+   - VAT percentages from settings
+   → These are computed from data, not static text
+
+3. ARIA LABELS FOR ICONS:
+   - SVG icon buttons (back, cart, trash, etc.)
+   - Already covered with t() function
+   ✅ All updated
+
+4. IMAGE ALT TEXT:
+   - Logo alt: "Deegaan Restaurant"
+   - Item images use item.name (from API)
+   → Appropriate as is
+
+5. PLACEHOLDERS (Minor):
+   - Input fields already use t() function
+   ✅ All updated
+
+6. ICON EMOJIS:
+   - 🔍 🪑 📡 🍲 (decorative emojis)
+   → Can be changed in appText.js if needed
+   ✅ Configurable
+
+----------------------------------------------------------------
+SPECIAL CASES HANDLED:
+----------------------------------------------------------------
+
+✅ Multi-part text:
+   - "Order ID: 123" → t('Checkout.successOrderIdPrefix') + orderID
+   - "Size: Large" → t('Checkout.sizePrefix') + sizeName
+   - "Note: No Onion" → t('Checkout.notePrefix') + notes
+
+✅ Conditional text:
+   - "PLACE ORDER" vs "PLACING ORDER..." → Both in appText.js
+   - "Tax" vs "VAT" → VAT comes from API settings
+
+✅ Dynamic instructions:
+   - iPhone vs iPad install instructions → Both in appText.js
+
+----------------------------------------------------------------
+TESTING CHECKLIST:
+----------------------------------------------------------------
+After rebuild, verify these screens show correct text:
+
+□ Welcome screen
+□ Menu page (title, filters button, empty state)
+□ Menu item modal (add button, size/quantity/addons labels)
+□ Notes autocomplete (label, placeholder, add new)
+□ Filter sheet (all labels and buttons)
+□ Cart/Checkout page (all labels and buttons)
+□ Delete confirmation modal
+□ Edit notes modal
+□ Order success modal
+□ Offline indicator
+□ PWA install banner
+□ Loading screen
+
+----------------------------------------------------------------
+REBUILD COMMAND:
+----------------------------------------------------------------
+cd restaurant-api
+npm run build
+
+(or npm run dev for development)
+
+----------------------------------------------------------------
+TEXT REPLACEMENT EXAMPLES:
+----------------------------------------------------------------
+
+Before: <h1>MENU</h1>
+After:  <h1>{{ t('Menu.title') }}</h1>
+
+Before: <button>Add to Cart</button>
+After:  <button>{{ t('MenuItem.confirmButton') }}</button>
+
+Before: placeholder="Search menu items..."
+After:  :placeholder="t('Filters.searchPlaceholder')"
+
+----------------------------------------------------------------
+STAFF INSTRUCTIONS FOR FUTURE EDITS:
+----------------------------------------------------------------
+
+To change ANY text in the app:
+
+1. Open: resources/js/config/appText.js
+2. Find the text using page/feature name
+3. Edit the text (keep quotes!)
+4. Save file
+5. Run: npm run build
+6. Refresh browser
+
+Example: To change "CONTINUE" button to "LET'S GO":
+  Find: continueButton: 'CONTINUE',
+  Change to: continueButton: "LET'S GO",
+  Save and rebuild.
+
+----------------------------------------------------------------
+END OF SUMMARY
+================================================================
+

@@ -3,8 +3,8 @@
   <div v-if="false" class="table-indicator">
     <div class="table-banner">
       <span class="table-icon">🪑</span>
-      <span class="table-text">Table: {{ tableStore.getTableDisplayName }}</span>
-      <button class="clear-btn" @click="hidePopup" aria-label="Hide table indicator">
+      <span class="table-text">{{ t('Table.prefix') }}{{ tableStore.getTableDisplayName }}</span>
+      <button class="clear-btn" @click="hidePopup" :aria-label="t('Table.hideAriaLabel')">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -15,6 +15,7 @@
 
 <script>
 import { useTableStore } from '../stores/tableStore.js'
+import { t } from '../config/appText.js'
 
 export default {
   name: 'TableIndicator',
@@ -27,7 +28,8 @@ export default {
     
     return {
       tableStore,
-      hidePopup
+      hidePopup,
+      t
     }
   }
 }

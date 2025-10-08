@@ -1,22 +1,22 @@
   <template>
     <div v-if="open" class="overlay" @click.self="$emit('close')">
       <div class="sheet">
-        <h2 class="title">Filter Menu</h2>
+        <h2 class="title">{{ t('Filters.title') }}</h2>
   
         <!-- Search -->
         <section class="section">
-          <h3>Search</h3>
+          <h3>{{ t('Filters.searchLabel') }}</h3>
           <input 
             type="text" 
             v-model="searchQuery" 
-            placeholder="Search menu items..."
+            :placeholder="t('Filters.searchPlaceholder')"
             class="search-input"
           />
         </section>
 
         <!-- Category -->
         <section class="section">
-          <h3>Categories</h3>
+          <h3>{{ t('Filters.categoriesLabel') }}</h3>
           <div class="grid2">
             <label v-for="c in categories" :key="c.id" class="opt">
               <input 
@@ -31,7 +31,7 @@
   
         <!-- Price range -->
         <section class="section">
-        <h3>Price Range</h3>
+        <h3>{{ t('Filters.priceRangeLabel') }}</h3>
         <div class="rangebox">
             <input
             type="range"
@@ -41,7 +41,7 @@
             v-model="price"
             />
             <div class="range-label">
-            Selected: $0 – ${{ price }}
+            {{ t('Filters.priceRangeText') }}{{ price }}
             </div>
         </div>
         </section>
@@ -50,8 +50,8 @@
   
         <!-- Actions -->
         <div class="actions">
-          <button class="ghost" @click="resetFilters">RESET</button>
-          <button class="primary" @click="applyFilters">APPLY FILTERS</button>
+          <button class="ghost" @click="resetFilters">{{ t('Filters.resetButton') }}</button>
+          <button class="primary" @click="applyFilters">{{ t('Filters.applyButton') }}</button>
         </div>
       </div>
     </div>
@@ -59,6 +59,7 @@
   
   <script setup>
   import { ref } from 'vue'
+  import { t } from '../config/appText.js'
 
 const price = ref(20) // default slider value
 const selectedCategories = ref([])

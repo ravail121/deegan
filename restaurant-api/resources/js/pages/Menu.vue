@@ -2,13 +2,13 @@
     <div class="wrap">
       <!-- Top Bar -->
       <header class="topbar">
-        <button class="iconbtn" @click="$router.back()" aria-label="Back">
+        <button class="iconbtn" @click="$router.back()" :aria-label="t('Menu.backButton')">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
-        <h1 class="title">MENU</h1>
-        <button class="iconbtn cartbtn" aria-label="Cart" @click="$router.push({ name:'checkout' })">
+        <h1 class="title">{{ t('Menu.title') }}</h1>
+        <button class="iconbtn cartbtn" :aria-label="t('Menu.cartButton')" @click="$router.push({ name:'checkout' })">
 
             <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="9" cy="20" r="1"/><circle cx="17" cy="20" r="1"/>
@@ -38,7 +38,7 @@
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 6h16M7 12h10M10 18h4" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <span>Filters</span>
+                <span>{{ t('Menu.filtersButton') }}</span>
                 <span v-if="hasActiveFilters" class="filter-badge">{{ activeFilterCount }}</span>
             </button>
         </div>
@@ -53,11 +53,11 @@
         
         <!-- Empty State -->
         <div v-if="filteredItems.length === 0" class="empty-state">
-          <div class="empty-icon">🔍</div>
-          <h3 class="empty-title">No items found</h3>
-          <p class="empty-text">Try adjusting your filters or search terms</p>
+          <div class="empty-icon">{{ t('Menu.emptyStateIcon') }}</div>
+          <h3 class="empty-title">{{ t('Menu.emptyStateTitle') }}</h3>
+          <p class="empty-text">{{ t('Menu.emptyStateText') }}</p>
           <button v-if="hasActiveFilters" class="reset-btn" @click="resetAllFilters">
-            Clear All Filters
+            {{ t('Menu.clearFiltersButton') }}
           </button>
         </div>
       </main>
@@ -79,6 +79,7 @@
   import { useCart } from '../stores/cart'
   import { useOfflineStore } from '../stores/offlineStore.js'
   import { getApiUrl, API_CONFIG } from '../config/api.js'
+  import { t } from '../config/appText.js'
   const cart = useCart()
   const offlineStore = useOfflineStore()
   const showFilters = ref(false)
@@ -93,7 +94,7 @@
     ]
   
   // Categories from API
-  const categories = ref([{ id: 'all', name: 'All', emoji: '🍲' }])
+  const categories = ref([{ id: 'all', name: t('Menu.allCategory'), emoji: t('Menu.allCategoryEmoji') }])
   const activeCat = ref('all')
 
   // Fetch categories from API with offline support
@@ -108,11 +109,11 @@
           name: pkg.packageName,
           image: pkg.photo80 ? `https://menu.deegaan.so/assets/images/meals/packages/small80/${pkg.photo80}` : '/images/dishes/default.jpg'
         }))
-        
-        categories.value = [
-          { id: 'all', name: 'All', emoji: '🍲', image: null },
-          ...fetchedCategories
-        ]
+      
+      categories.value = [
+        { id: 'all', name: t('Menu.allCategory'), emoji: t('Menu.allCategoryEmoji'), image: null },
+        ...fetchedCategories
+      ]
       }
     } catch (error) {
       console.error('Error fetching categories:', error)
@@ -138,7 +139,7 @@
       }))
       
       categories.value = [
-        { id: 'all', name: 'All', emoji: '🍲', image: null },
+        { id: 'all', name: t('Menu.allCategory'), emoji: t('Menu.allCategoryEmoji'), image: null },
         ...fetchedCategories
       ]
     }

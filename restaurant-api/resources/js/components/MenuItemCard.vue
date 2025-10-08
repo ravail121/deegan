@@ -15,7 +15,7 @@
           <span class="badge">{{ item.badge }}</span>
         </div>
   
-        <button class="add" @click="showModal = true">ADD</button>
+        <button class="add" @click="showModal = true">{{ t('MenuItem.addButton') }}</button>
       </div>
   
       <!-- Modal -->
@@ -25,7 +25,7 @@
   
           <!-- Variants -->
           <section class="section" v-if="item.sizes && item.sizes.length > 0">
-            <h3>Choose Size</h3>
+            <h3>{{ t('MenuItem.chooseSizeLabel') }}</h3>
             <label v-for="size in item.sizes" :key="size.sizeID" class="option">
               <input type="radio" name="variant" :value="size" v-model="selectedVariant" />
               {{ size.sizeName }} (${{ Number(size.price).toFixed(2) }})
@@ -34,7 +34,7 @@
   
           <!-- Add-ons -->
           <section class="section" v-if="item.addons && item.addons.length > 0">
-            <h3>Add-ons</h3>
+            <h3>{{ t('MenuItem.addOnsLabel') }}</h3>
             <label v-for="addon in item.addons" :key="addon.addonID" class="option">
               <input type="checkbox" :value="addon" v-model="selectedAddOns" />
               {{ addon.addonName }} (+${{ Number(addon.price).toFixed(2) }})
@@ -43,7 +43,7 @@
   
           <!-- Quantity -->
           <section class="section row">
-            <h3>Quantity</h3>
+            <h3>{{ t('MenuItem.quantityLabel') }}</h3>
             <div class="qty">
               <button @click="qty > 0 && qty--">-</button>
               <span :class="{ 'qty-zero': qty === 0 }">{{ qty }}</span>
@@ -53,7 +53,7 @@
           
           <!-- Remove warning when quantity is 0 -->
           <div v-if="qty === 0 && cartItemIndex !== -1" class="remove-warning">
-            ⚠️ This item will be removed from your cart
+            {{ t('MenuItem.removeWarning') }}
           </div>
 
           <!-- Customer Notes -->
@@ -66,8 +66,8 @@
   
           <!-- Actions -->
           <div class="actions">
-            <button class="cancel" @click="showModal = false">Cancel</button>
-            <button class="confirm" @click="confirmAdd">Add to Cart</button>
+            <button class="cancel" @click="showModal = false">{{ t('MenuItem.cancelButton') }}</button>
+            <button class="confirm" @click="confirmAdd">{{ t('MenuItem.confirmButton') }}</button>
           </div>
         </div>
       </div>
@@ -78,6 +78,7 @@
   import { ref, watch, computed } from 'vue'
   import { useCart } from '../stores/cart'
   import MealNotesInput from './MealNotesInput.vue'
+  import { t } from '../config/appText.js'
   
   const props = defineProps({
     item: { type: Object, required: true }
